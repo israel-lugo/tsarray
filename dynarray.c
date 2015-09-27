@@ -44,69 +44,69 @@
 
 /* abstract versions; only for internal use (must match the subclassed
  * versions in DYNARRAY_TYPE_DECLARE) */
-struct _element_abs {
+struct _item_abs {
     int used;
     int object; /* placeholder */
 };
 
 
 
-static inline struct _element_abs *get_nth_element(
-        const struct _element_abs *elements, int index, size_t element_size)
+static inline struct _item_abs *get_nth_item(
+        const struct _item_abs *items, int index, size_t item_size)
     __ATTR_CONST __NON_NULL;
 
-static void set_element(struct _element_abs *elements,
+static void set_item(struct _item_abs *items,
                         int index, const void *object, size_t obj_size,
-                        size_t element_size) __NON_NULL;
+                        size_t item_size) __NON_NULL;
 
-static int find_free_element(const struct _dynarray_abs *p_dynarray,
-                             size_t element_size) __ATTR_CONST __NON_NULL;
+static int find_free_item(const struct _dynarray_abs *p_dynarray,
+                             size_t item_size) __ATTR_CONST __NON_NULL;
 
 static int dynarray_grow(struct _dynarray_abs *p_dynarray,
                          const void *object, size_t obj_size,
-                         size_t element_size) __NON_NULL;
+                         size_t item_size) __NON_NULL;
 
 static int dynarray_reuse(struct _dynarray_abs *p_dynarray,
                           const void *object, size_t obj_size,
-                          size_t element_size) __NON_NULL;
+                          size_t item_size) __NON_NULL;
 
 
 /*
- * Add an element to a dynarray, growing or reusing free elements as required.
+ * Add an item to a dynarray, growing or reusing free items as required.
  *
- * Receives the dynarray, the object and its size, and the size of elements
- * in this array. Returns the index of the newly added element. In case of
+ * Receives the dynarray, the object and its size, and the size of items
+ * in this array. Returns the index of the newly added item. In case of
  * error (insufficient memory), returns -1.
  */
 int dynarray_add(struct _dynarray_abs *p_dynarray, const void *object,
-                 size_t obj_size, size_t element_size)
+                 size_t obj_size, size_t item_size)
 {
     assert(p_dynarray->used_count <= p_dynarray->len);
 
     if (p_dynarray->used_count == p_dynarray->len)
     {   /* array is full, must grow */
-        return dynarray_grow(p_dynarray, object, obj_size, element_size);
+        return dynarray_grow(p_dynarray, object, obj_size, item_size);
     }
     else
-    {   /* array has space, find a free element and reuse it */
-        return dynarray_reuse(p_dynarray, object, obj_size, element_size);
+    {   /* array has space, find a free item and reuse it */
+        return dynarray_reuse(p_dynarray, object, obj_size, item_size);
     }
 }
 
 
 
 /*
- * Remove an element from a dynarray.
+ * Remove an item from a dynarray.
  *
- * Receives the dynarray, the index of the element to remove, and the size
- * of elements in this array. It is not an error to remove an element which
+ * Receives the dynarray, the index of the item to remove, and the size
+ * of items in this array. It is not an error to remove an item which
  * had already been removed. Returns 0 in case of success, or -1 in case of
  * error (invalid index).
  */
 int dynarray_remove(struct _dynarray_abs *p_dynarray, int index,
-                    size_t element_size)
+                    size_t item_size)
 {
-    struct _element_abs *element;
+    struct _item_abs *item;
 
     /* XXX: Do we want to shrink the array? Good because it saves memory;
      * bad because it changes the indexes for objects. Perhaps create a
@@ -115,11 +115,11 @@ int dynarray_remove(struct _dynarray_abs *p_dynarray, int index,
     if (index >= p_dynarray->len)
         return -1;
 
-    element = get_nth_element(p_dynarray->elements, index, element_size);
+    item = get_nth_item(p_dynarray->items, index, item_size);
 
-    if (element->used)
+    if (item->used)
     {
-        element->used = 0;
+        item->used = 0;
         p_dynarray->used_count--;
     }
 
@@ -129,7 +129,7 @@ int dynarray_remove(struct _dynarray_abs *p_dynarray, int index,
 
 
 int dynarray_compact(struct _dynarray_abs *p_dynarray, int force,
-                     size_t obj_size, size_t element_size)
+                     size_t obj_size, size_t item_size)
 {
     int hole_count;
     int hole_pct;
@@ -142,7 +142,7 @@ int dynarray_compact(struct _dynarray_abs *p_dynarray, int force,
     hole_pct = (hole_count * 100) / p_dynarray->len;
 
     assert(hole_count >= 0);
-    assert(p_dynarray->elements != NULL);
+    assert(p_dynarray->items != NULL);
 
     /*
      * TODO: More efficient algorithm for compacting:
@@ -188,46 +188,46 @@ int dynarray_compact(struct _dynarray_abs *p_dynarray, int force,
          * from the end for the first non-hole; move it to the hole; move
          * on -- problem: this changes order!
          *
-         * 2) give every element some int position; holes have position =
+         * 2) give every item some int position; holes have position =
          * INT_MAX or something; just quicksort the array, leaving all the
          * holes at the end
          */
     }
 #endif
     else if (p_dynarray->used_count == 0)
-    {   /* all holes, no used elements at all */
+    {   /* all holes, no used items at all */
         p_dynarray->len = 0;
-        free(p_dynarray->elements);
-        p_dynarray->elements = NULL;
+        free(p_dynarray->items);
+        p_dynarray->items = NULL;
     }
     else
     {   /* mostly holes, more than 50% (but not all) */
         /* just copy the used objects to a new array */
 
-        void *new_elements = malloc(element_size * p_dynarray->used_count);
+        void *new_items = malloc(item_size * p_dynarray->used_count);
         int i, j;
 
-        if (unlikely(new_elements == NULL))
+        if (unlikely(new_items == NULL))
             return -1;
 
         j = 0;
         for (i = 0; i < p_dynarray->len; i++)
         {
-            const struct _element_abs *element = get_nth_element(
-                    p_dynarray->elements, i, element_size);
+            const struct _item_abs *item = get_nth_item(
+                    p_dynarray->items, i, item_size);
 
-            if (!element->used)
+            if (!item->used)
                 continue;
 
             assert(j < p_dynarray->used_count);
 
-            set_element(new_elements, j, &element->object, obj_size, element_size);
+            set_item(new_items, j, &item->object, obj_size, item_size);
             j++;
         }
 
         assert(j == p_dynarray->used_count);
-        free(p_dynarray->elements);
-        p_dynarray->elements = new_elements;
+        free(p_dynarray->items);
+        p_dynarray->items = new_items;
         p_dynarray->len = p_dynarray->used_count;
     }
 
@@ -238,28 +238,28 @@ int dynarray_compact(struct _dynarray_abs *p_dynarray, int force,
 
 
 /*
- * Grow a dynarray and add a new element at the end.
+ * Grow a dynarray and add a new item at the end.
  *
- * Receives the dynarray, the object and its size, and the size of elements for
- * this array. Returns the index of the newly added element. In case of error
+ * Receives the dynarray, the object and its size, and the size of items for
+ * this array. Returns the index of the newly added item. In case of error
  * (insufficient memory), returns -1.
  */
 static int dynarray_grow(struct _dynarray_abs *p_dynarray,
                          const void *object, size_t obj_size,
-                         size_t element_size)
+                         size_t item_size)
 {
     const int new_len = p_dynarray->len + 1;
     const int new_index = p_dynarray->len;
-    void *elements = realloc(p_dynarray->elements, element_size * new_len);
+    void *items = realloc(p_dynarray->items, item_size * new_len);
 
-    if (unlikely(elements == NULL))
+    if (unlikely(items == NULL))
         return -1;
 
-    p_dynarray->elements = elements;
+    p_dynarray->items = items;
     p_dynarray->len = new_len;
     p_dynarray->used_count = new_len;
 
-    set_element(p_dynarray->elements, new_index, object, obj_size, element_size);
+    set_item(p_dynarray->items, new_index, object, obj_size, item_size);
 
     return new_index;
 }
@@ -267,20 +267,20 @@ static int dynarray_grow(struct _dynarray_abs *p_dynarray,
 
 
 /*
- * Reuse a free element in a dynarray.
+ * Reuse a free item in a dynarray.
  *
- * Receives the dynarray, the object and its size, and the size of elements for
- * this array. Returns the index where the element was stored.
+ * Receives the dynarray, the object and its size, and the size of items for
+ * this array. Returns the index where the item was stored.
  */
 static int dynarray_reuse(struct _dynarray_abs *p_dynarray,
                           const void *object, size_t obj_size,
-                          size_t element_size)
+                          size_t item_size)
 {
-    int first_free = find_free_element(p_dynarray, element_size);
+    int first_free = find_free_item(p_dynarray, item_size);
 
     assert(first_free != -1);
 
-    set_element(p_dynarray->elements, first_free, object, obj_size, element_size);
+    set_item(p_dynarray->items, first_free, object, obj_size, item_size);
     p_dynarray->used_count++;
 
     assert(p_dynarray->used_count <= p_dynarray->len);
@@ -291,51 +291,51 @@ static int dynarray_reuse(struct _dynarray_abs *p_dynarray,
 
 
 /*
- * Get the Nth element from a dynarray's abstract element array, given its
- * index and the size of the array's elements.
+ * Get the Nth item from a dynarray's abstract item array, given its
+ * index and the size of the array's items.
  */
-static inline struct _element_abs *get_nth_element(
-        const struct _element_abs *elements, int index, size_t element_size)
+static inline struct _item_abs *get_nth_item(
+        const struct _item_abs *items, int index, size_t item_size)
 {
     /* void * has alignment of 1 */
-    return (struct _element_abs *)((void *)elements + (index * element_size));
+    return (struct _item_abs *)((void *)items + (index * item_size));
 }
 
 
 
 /*
- * Set the contents of an element in a dynarray.
+ * Set the contents of an item in a dynarray.
  *
- * Receives the dynarray's abstract element array, the index of the element
+ * Receives the dynarray's abstract item array, the index of the item
  * to set, the object and its size.
  */
-static void set_element(struct _element_abs *elements,
+static void set_item(struct _item_abs *items,
                         int index, const void *object, size_t obj_size,
-                        size_t element_size)
+                        size_t item_size)
 {
-    struct _element_abs *element = get_nth_element(elements, index, element_size);
+    struct _item_abs *item = get_nth_item(items, index, item_size);
 
-    element->used = 1;
-    memcpy(&element->object, object, obj_size);
+    item->used = 1;
+    memcpy(&item->object, object, obj_size);
 }
 
 
 
 /*
- * Find the first free element in an array.
+ * Find the first free item in an array.
  *
- * Returns the element's index or -1 if no free element was found.
+ * Returns the item's index or -1 if no free item was found.
  */
-static int find_free_element(const struct _dynarray_abs *p_dynarray,
-                             size_t element_size)
+static int find_free_item(const struct _dynarray_abs *p_dynarray,
+                             size_t item_size)
 {
     int i;
 
     for (i = 0; i < p_dynarray->len; i++)
     {
-        const struct _element_abs *element = get_nth_element(p_dynarray->elements,
-                                                             i, element_size);
-        if (!element->used)
+        const struct _item_abs *item = get_nth_item(p_dynarray->items,
+                                                             i, item_size);
+        if (!item->used)
             return i;
     }
 

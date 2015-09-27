@@ -52,48 +52,48 @@
 struct _dynarray_abs {
     int len;
     int used_count;
-    struct _element_abs *elements;
+    struct _item_abs *items;
 };
 
 
 int dynarray_add(struct _dynarray_abs *p_dynarray, const void *object,
-                 size_t obj_size, size_t element_size) __NON_NULL;
+                 size_t obj_size, size_t item_size) __NON_NULL;
 
 int dynarray_remove(struct _dynarray_abs *p_dynarray, int index,
-                    size_t element_size) __NON_NULL;
+                    size_t item_size) __NON_NULL;
 
 int dynarray_compact(struct _dynarray_abs *p_dynarray, int force,
-                     size_t obj_size, size_t element_size) __NON_NULL;
+                     size_t obj_size, size_t item_size) __NON_NULL;
 
 
 #define DYNARRAY_EMPTY { 0, 0, NULL }
 
 
 #define DYNARRAY_TYPE_DECLARE(name, type) \
-    struct name##_element { \
+    struct name##_item { \
         int used; \
         type object; \
     }; \
     typedef struct { \
         int len; \
         int used_count; \
-        struct name##_element *elements; \
+        struct name##_item *items; \
     } name; \
     static inline int name##_add(name *array, type *object) { \
         return dynarray_add((struct _dynarray_abs *)array, object, \
-                            sizeof(type), sizeof(struct name##_element)); \
+                            sizeof(type), sizeof(struct name##_item)); \
     } \
     static inline int name##_remove(name *array, int index) { \
         return dynarray_remove((struct _dynarray_abs *)array, index, \
-                               sizeof(struct name##_element)); \
+                               sizeof(struct name##_item)); \
     } \
     static inline type *name##_get_nth(name *array, int index) { \
-        struct name##_element *element = &array->elements[index]; \
-        return likely(element->used) ? &element->object : NULL; \
+        struct name##_item *item = &array->items[index]; \
+        return likely(item->used) ? &item->object : NULL; \
     } \
     static inline int name##_compact(name *array, int force) { \
         return dynarray_compact((struct _dynarray_abs *)array, force, \
-                                sizeof(type), sizeof(struct name##_element)); \
+                                sizeof(type), sizeof(struct name##_item)); \
     }
 
 

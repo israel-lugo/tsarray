@@ -12,10 +12,10 @@ void print_array(void)
 {
     int i;
 
-    puts("\nReading all used elements in array");
+    puts("\nReading all used items in array");
     for (i = 0; i < a1.len; i++)
     {
-        if (a1.elements[i].used)
+        if (a1.items[i].used)
             printf("a1[%d] = %d\n", i, *intarray_get_nth(&a1, i));
     }
 }
@@ -36,7 +36,7 @@ int main(void)
 
     print_array();
 
-    puts("\nDeleting 3rd element");
+    puts("\nDeleting 3rd item");
     intarray_remove(&a1, 2);
 
     print_array();
@@ -47,7 +47,7 @@ int main(void)
 
     print_array();
 
-    puts("\nDeleting 3rd element again");
+    puts("\nDeleting 3rd item again");
     intarray_remove(&a1, 2);
 
     print_array();

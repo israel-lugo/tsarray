@@ -21,33 +21,33 @@ int main(void)
         printf("added idx: %d\n", idx);
     }
 
-    puts("\nReading all used elements in array");
+    puts("\nReading all used items in array");
 
     for (i = 0; i < a1.len; i++)
     {
-        if (a1.elements[i].used)
-            printf("a1[%d] = %d\n", i, a1.elements[i].object);
+        if (a1.items[i].used)
+            printf("a1[%d] = %d\n", i, a1.items[i].object);
     }
 
-    puts("\nDeleting 3rd element");
+    puts("\nDeleting 3rd item");
     intarray_remove(&a1, 2);
 
-    puts("\nReading all used elements in array");
+    puts("\nReading all used items in array");
     for (i = 0; i < a1.len; i++)
     {
-        if (a1.elements[i].used)
-            printf("a1[%d] = %d\n", i, a1.elements[i].object);
+        if (a1.items[i].used)
+            printf("a1[%d] = %d\n", i, a1.items[i].object);
     }
 
     puts("\nAdding 69 to the array");
     i = 69;
     intarray_add(&a1, &i);
 
-    puts("\nReading all used elements in array");
+    puts("\nReading all used items in array");
     for (i = 0; i < a1.len; i++)
     {
-        if (a1.elements[i].used)
-            printf("a1[%d] = %d\n", i, a1.elements[i].object);
+        if (a1.items[i].used)
+            printf("a1[%d] = %d\n", i, a1.items[i].object);
     }
 
     return 0;
