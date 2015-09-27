@@ -26,7 +26,7 @@
  * dynarray.h - dynamic array module header
  */
 
-/* $Id$ */
+/* $Id: dynarray.h 267 2012-06-13 19:47:59Z capi $ */
 
 #ifndef _DYNARRAY_H
 #define _DYNARRAY_H
@@ -62,6 +62,9 @@ int dynarray_add(struct _dynarray_abs *p_dynarray, const void *object,
 int dynarray_remove(struct _dynarray_abs *p_dynarray, int index,
                     size_t element_size) __NON_NULL;
 
+int dynarray_compact(struct _dynarray_abs *p_dynarray, int force,
+                     size_t obj_size, size_t element_size) __NON_NULL;
+
 
 #define DYNARRAY_EMPTY { 0, 0, NULL }
 
@@ -87,6 +90,10 @@ int dynarray_remove(struct _dynarray_abs *p_dynarray, int index,
     static inline type *name##_get_nth(name *array, int index) { \
         struct name##_element *element = &array->elements[index]; \
         return likely(element->used) ? &element->object : NULL; \
+    } \
+    static inline int name##_compact(name *array, int force) { \
+        return dynarray_compact((struct _dynarray_abs *)array, force, \
+                                sizeof(type), sizeof(struct name##_element)); \
     }
 
 

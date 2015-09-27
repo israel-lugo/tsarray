@@ -1,0 +1,54 @@
+#include <stdio.h>
+
+#include "dynarray.h"
+
+DYNARRAY_TYPE_DECLARE(intarray, int);
+
+
+intarray a1 = DYNARRAY_EMPTY;
+
+
+int main(void)
+{
+    int count = 5;
+    int i;
+
+    printf("Adding %d ints starting from 50\n", count);
+    for (i = 50; i < 50 + count; i++)
+    {
+        int idx = intarray_add(&a1, &i);
+
+        printf("added idx: %d\n", idx);
+    }
+
+    puts("\nReading all used elements in array");
+
+    for (i = 0; i < a1.len; i++)
+    {
+        if (a1.elements[i].used)
+            printf("a1[%d] = %d\n", i, a1.elements[i].object);
+    }
+
+    puts("\nDeleting 3rd element");
+    intarray_remove(&a1, 2);
+
+    puts("\nReading all used elements in array");
+    for (i = 0; i < a1.len; i++)
+    {
+        if (a1.elements[i].used)
+            printf("a1[%d] = %d\n", i, a1.elements[i].object);
+    }
+
+    puts("\nAdding 69 to the array");
+    i = 69;
+    intarray_add(&a1, &i);
+
+    puts("\nReading all used elements in array");
+    for (i = 0; i < a1.len; i++)
+    {
+        if (a1.elements[i].used)
+            printf("a1[%d] = %d\n", i, a1.elements[i].object);
+    }
+
+    return 0;
+}
