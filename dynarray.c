@@ -41,13 +41,9 @@
 #include "common.h"
 
 
-
-/* abstract versions; only for internal use (must match the subclassed
- * versions in DYNARRAY_TYPE_DECLARE) */
-struct _item_abs {
-    int used;
-    int object; /* placeholder */
-};
+/* Abstract item type definition. Used as a placeholder whenever we need to
+ * manipulate items. The item type can be anything. */
+_ITEM_TYPE_DECL(_item_abs, int);
 
 
 
