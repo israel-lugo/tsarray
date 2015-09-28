@@ -41,9 +41,13 @@
 #include "common.h"
 
 
+
 /* Abstract item type definition. Used as a placeholder whenever we need to
  * manipulate items. The item type can be anything. */
-_ITEM_TYPE_DECL(_item_abs, int);
+struct _item_abs {
+    int used;
+    int object; /* placeholder */
+};
 
 
 

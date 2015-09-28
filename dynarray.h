@@ -46,17 +46,9 @@
 #include "common.h"
 
 
-/* Declare the array item type. Only for internal use. Used inside
- * DYNARRAY_TYPE_DECLARE and in dynarray.c to declare an abstract item. */
-#define _ITEM_TYPE_DECL(raw_name, type) \
-    struct raw_name { \
-        int used; \
-        type object; \
-    }
 
-
-/* Abstract type of the dynamic array. Only for internal use. Must match
- * the subclassed version in DYNARRAY_TYPE_DECLARE. */
+/* abstract versions; only for internal use (must match the subclassed
+ * versions in DYNARRAY_TYPE_DECLARE) */
 struct _dynarray_abs {
     int len;
     int used_count;
@@ -78,7 +70,10 @@ int dynarray_compact(struct _dynarray_abs *p_dynarray, int force,
 
 
 #define DYNARRAY_TYPE_DECLARE(name, type) \
-    _ITEM_TYPE_DECL(name##_item, type); \
+    struct name##_item { \
+        int used; \
+        type object; \
+    }; \
     typedef struct { \
         int len; \
         int used_count; \
