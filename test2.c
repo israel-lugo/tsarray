@@ -52,6 +52,11 @@ int main(void)
 
     print_array();
 
+    puts("\nDeleting 4th item");
+    intarray_remove(&a1, 3);
+
+    print_array();
+
     puts("\nCompacting array");
     intarray_compact(&a1, 0);
 

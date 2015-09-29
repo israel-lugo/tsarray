@@ -33,6 +33,8 @@
 #  include <config.h>
 #endif
 
+/* get INT_MAX */
+#include <limits.h>
 
 /* get memcpy */
 #include <string.h>
@@ -144,56 +146,10 @@ int dynarray_compact(struct _dynarray_abs *p_dynarray, int force,
     assert(hole_count >= 0);
     assert(p_dynarray->items != NULL);
 
-    /*
-     * TODO: More efficient algorithm for compacting:
-     *
-     * holes <- new FIFO()
-     *
-     * for i in 0..N:
-     *   # Remember holes
-     *   if array[i].is_hole:
-     *     holes.enqueue(i)
-     *
-     *   # If we're not a hole and there are holes to fill, move ourselves
-     *   elif !holes.empty:
-     *     dst <- holes.dequeue()
-     *     array[dst] <- array[i]
-     *     array[i].is_hole <- True
-     *
-     * array.resize_to(N - hole_count)
-     *
-     * This uses N tests for emptiness and M copies, where M is the number
-     * of non-empty nodes to the right of the first hole. We can compact
-     * the array in O(N+M) time, assuming the FIFO is O(1) for enqueing and
-     * dequeing, and that the resizing is also O(1), which should be true
-     * of any sane realloc implementation when resizing to a smaller size.
-     *
-     * We use up to O(H) space, where H is the number of holes (we store
-     * them in the FIFO).
-     *
-     * The FIFO can be implemented with a circular single-linked list.
-     * We can make it O(1) for enqueue and dequeue, as long as we keep a
-     * pointer to the last node. Just insert at the tail and pop from the
-     * head.
-     */
-
     if (hole_pct < 10 && (!force || hole_count == 0))
     {   /* less than 10%: very few or no holes */
         /* DO NOTHING */
     }
-#if 0
-    else if (hole_pct <= 50)
-    {   /* TODO: many holes, between 11% and 50% */
-        /* 1) linear search for first hole; when we find it, start looking
-         * from the end for the first non-hole; move it to the hole; move
-         * on -- problem: this changes order!
-         *
-         * 2) give every item some int position; holes have position =
-         * INT_MAX or something; just quicksort the array, leaving all the
-         * holes at the end
-         */
-    }
-#endif
     else if (p_dynarray->used_count == 0)
     {   /* all holes, no used items at all */
         p_dynarray->len = 0;
@@ -201,34 +157,41 @@ int dynarray_compact(struct _dynarray_abs *p_dynarray, int force,
         p_dynarray->items = NULL;
     }
     else
-    {   /* mostly holes, more than 50% (but not all) */
-        /* just copy the used objects to a new array */
+    {   /* enough holes to care, but not all holes */
+        struct _item_abs *items = p_dynarray->items;
+        const int len = p_dynarray->len;
+        int first_hole = INT_MAX;
+        int i;
 
-        void *new_items = malloc(item_size * p_dynarray->used_count);
-        int i, j;
+        assert(p_dynarray->used_count < len);
 
-        if (unlikely(new_items == NULL))
-            return -1;
-
-        j = 0;
-        for (i = 0; i < p_dynarray->len; i++)
+        for (i = 0; i < len; i++)
         {
-            const struct _item_abs *item = get_nth_item(
-                    p_dynarray->items, i, item_size);
+            struct _item_abs *item = get_nth_item(items, i, item_size);
 
             if (!item->used)
-                continue;
-
-            assert(j < p_dynarray->used_count);
-
-            set_item(new_items, j, &item->object, obj_size, item_size);
-            j++;
+                first_hole = min(first_hole, i);
+            else if (first_hole < i)
+            {   /* non-empty item, and there's a previous hole to fill */
+                set_item(items, first_hole, &item->object, obj_size, item_size);
+                item->used = 0;
+                /* there can only be empty items between first_hole and us;
+                 * either there's another hole, or we're now the first hole */
+                first_hole++;
+            }
         }
 
-        assert(j == p_dynarray->used_count);
-        free(p_dynarray->items);
-        p_dynarray->items = new_items;
-        p_dynarray->len = p_dynarray->used_count;
+        /* Non-empty items are now contiguous from the start; first_hole
+         * marks the end of the data. We knew there were holes when we
+         * entered, so first_hole can't be INT_MAX. */
+        assert(first_hole == p_dynarray->used_count);
+
+        items = realloc(items, item_size * first_hole);
+        if (unlikely(items == NULL))
+            return -1;
+
+        p_dynarray->items = items;
+        p_dynarray->len = first_hole;
     }
 
     return 0;
@@ -248,6 +211,7 @@ static int dynarray_grow(struct _dynarray_abs *p_dynarray,
                          const void *object, size_t obj_size,
                          size_t item_size)
 {
+    /* XXX: Maybe we should grow in chunks, instead of 1 at a time. */
     const int new_len = p_dynarray->len + 1;
     const int new_index = p_dynarray->len;
     void *items = realloc(p_dynarray->items, item_size * new_len);
