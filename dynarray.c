@@ -39,6 +39,9 @@
 /* get memcpy */
 #include <string.h>
 
+/* get error codes */
+#include <ncraft.h>
+
 #include "dynarray.h"
 #include "common.h"
 
@@ -115,7 +118,7 @@ int dynarray_remove(struct _dynarray_abs *p_dynarray, int index,
      * separate operation to explicitly compact the array. */
 
     if (index >= p_dynarray->len)
-        return -1;
+        return NC_EINVAL;
 
     item = get_nth_item(p_dynarray->items, index, item_size);
 
@@ -195,7 +198,7 @@ int dynarray_compact(struct _dynarray_abs *p_dynarray, int force,
 
         items = realloc(items, item_size * first_hole);
         if (unlikely(items == NULL))
-            return -1;
+            return NC_ENOMEM;
 
         p_dynarray->items = items;
         p_dynarray->len = first_hole;
@@ -224,7 +227,7 @@ static int dynarray_grow(struct _dynarray_abs *p_dynarray,
     void *items = realloc(p_dynarray->items, item_size * new_len);
 
     if (unlikely(items == NULL))
-        return -1;
+        return NC_ENOMEM;
 
     p_dynarray->items = items;
     p_dynarray->len = new_len;
@@ -310,7 +313,7 @@ static int find_free_item(const struct _dynarray_abs *p_dynarray,
             return i;
     }
 
-    return -1;
+    return NC_ENOENT;
 }
 
 

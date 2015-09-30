@@ -5,6 +5,8 @@ BIN_FILES = test test2
 
 CFLAGS ?= -g -Wall
 
+CFLAGS += -I../include
+
 
 all: tests
 
