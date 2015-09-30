@@ -165,6 +165,13 @@ int dynarray_compact(struct _dynarray_abs *p_dynarray, int force,
 
         assert(p_dynarray->used_count < len);
 
+        /*
+         * Walk the array, looking for a hole. Remember its position.
+         * Keep walking until we find a non-empty item. Move it to the
+         * first hole. Now to the right of the first hole there must be a
+         * hole: either there was a previously existing hole, or the
+         * non-empty item which we just moved (turning it into a hole).
+         */
         for (i = 0; i < len; i++)
         {
             struct _item_abs *item = get_nth_item(items, i, item_size);
