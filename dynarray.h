@@ -66,6 +66,10 @@ int dynarray_compact(struct _dynarray_abs *p_dynarray, int force,
                      size_t obj_size, size_t item_size) __NON_NULL;
 
 
+/* Initializer for an empty dynarray. When assigning to an already declared
+ * array, this must be transformed into a compound literal (by prepending
+ * the type name in parenthesis), e.g.: (intarray)DYNARRAY_EMPTY
+ */
 #define DYNARRAY_EMPTY { 0, 0, NULL }
 
 
