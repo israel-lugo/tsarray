@@ -57,13 +57,13 @@ struct _dynarray_abs {
 
 
 int dynarray_add(struct _dynarray_abs *p_dynarray, const void *object,
-                 size_t obj_size, size_t item_size) __NON_NULL;
+        size_t obj_size, size_t item_size) __NON_NULL;
 
 int dynarray_remove(struct _dynarray_abs *p_dynarray, int index,
-                    size_t item_size) __NON_NULL;
+        size_t item_size) __NON_NULL;
 
 int dynarray_compact(struct _dynarray_abs *p_dynarray, int force,
-                     size_t obj_size, size_t item_size) __NON_NULL;
+        size_t obj_size, size_t item_size) __NON_NULL;
 
 
 /* Initializer for an empty dynarray. When assigning to an already declared
