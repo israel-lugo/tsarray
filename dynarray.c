@@ -130,6 +130,19 @@ int dynarray_remove(struct _dynarray_abs *p_dynarray, int index,
 
 
 
+/*
+ * Compact a dynarray, removing all empty items.
+ *
+ * Removes all empty items ("holes") from a dynarray, by rearranging it so
+ * all its used items are consecutive, then shrinking it to minimum size.
+ * Items are guaranteed to remain in the same order.
+ *
+ * If the dynarray has too few empty items to be worth the work, nothing is
+ * done; unless the force flag is non-zero, in which case will be compacted
+ * anyway.
+ *
+ * Returns 0 in case of success, non-zero otherwise.
+ */
 int dynarray_compact(struct _dynarray_abs *p_dynarray, int force,
         size_t obj_size, size_t item_size)
 {
@@ -203,7 +216,6 @@ int dynarray_compact(struct _dynarray_abs *p_dynarray, int force,
 
     return 0;
 }
-
 
 
 
