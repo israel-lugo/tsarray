@@ -102,8 +102,8 @@ int dynarray_add(struct _dynarray_abs *p_dynarray, const void *object,
  *
  * Receives the dynarray, the index of the item to remove, and the size
  * of items in this array. It is not an error to remove an item which
- * had already been removed. Returns 0 in case of success, or -1 in case of
- * error (invalid index).
+ * had already been removed. Returns 0 in case of success, non-zero
+ * otherwise.
  */
 int dynarray_remove(struct _dynarray_abs *p_dynarray, int index,
         size_t item_size)
