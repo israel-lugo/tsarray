@@ -292,7 +292,7 @@ static void set_item(struct _item_abs *items, int index,
 /*
  * Find the first free item in an array.
  *
- * Returns the item's index or -1 if no free item was found.
+ * Returns the item's index or NC_ENOENT if no free item was found.
  */
 static int find_free_item(const struct _dynarray_abs *p_dynarray,
         size_t item_size)
