@@ -65,6 +65,9 @@ int dynarray_remove(struct _dynarray_abs *p_dynarray, int index,
 int dynarray_compact(struct _dynarray_abs *p_dynarray, int force,
         size_t obj_size, size_t item_size) __NON_NULL;
 
+int dynarray_truncate(struct _dynarray_abs *p_dynarray, int len,
+        size_t item_size) __NON_NULL;
+
 
 /* Initializer for an empty dynarray. When assigning to an already declared
  * array, this must be transformed into a compound literal (by prepending
@@ -98,6 +101,10 @@ int dynarray_compact(struct _dynarray_abs *p_dynarray, int force,
     static inline int name##_compact(name *array, int force) { \
         return dynarray_compact((struct _dynarray_abs *)array, force, \
                                 sizeof(type), sizeof(struct name##_item)); \
+    } \
+    static inline int name##_truncate(name *array, int len) { \
+        return dynarray_truncate((struct _dynarray_abs *)array, len, \
+                                 sizeof(struct name##_item)); \
     }
 
 

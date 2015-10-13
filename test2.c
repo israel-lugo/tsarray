@@ -68,5 +68,28 @@ int main(void)
 
     print_array();
 
+    puts("\nTruncating the array to len=2");
+    intarray_truncate(&a1, 2);
+
+    print_array();
+
+    puts("\nAdding 3rd and 4th items");
+    i = 73;
+    intarray_add(&a1, &i);
+    i = 74;
+    intarray_add(&a1, &i);
+
+    print_array();
+
+    puts("\nRemoving 3rd item");
+    intarray_remove(&a1, 2);
+
+    print_array();
+
+    puts("\nTruncating the array to len=2");
+    intarray_truncate(&a1, 2);
+
+    print_array();
+
     return 0;
 }

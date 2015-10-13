@@ -66,7 +66,7 @@ static void set_item(struct _item_abs *items, int index,
 static int find_free_item(const struct _dynarray_abs *p_dynarray,
         size_t item_size) __ATTR_CONST __NON_NULL;
 
-static int dynarray_grow(struct _dynarray_abs *p_dynarray,
+static int dynarray_append(struct _dynarray_abs *p_dynarray,
         const void *object, size_t obj_size, size_t item_size) __NON_NULL;
 
 static int dynarray_reuse(struct _dynarray_abs *p_dynarray,
@@ -77,8 +77,8 @@ static int dynarray_reuse(struct _dynarray_abs *p_dynarray,
  * Add an item to a dynarray, growing or reusing free items as required.
  *
  * Receives the dynarray, the object and its size, and the size of items
- * in this array. Returns the index of the newly added item. In case of
- * error (insufficient memory), returns -1.
+ * in this array. Returns the index of the newly added item in case of
+ * success, or a negative error value in case of error.
  */
 int dynarray_add(struct _dynarray_abs *p_dynarray, const void *object,
         size_t obj_size, size_t item_size)
@@ -87,7 +87,7 @@ int dynarray_add(struct _dynarray_abs *p_dynarray, const void *object,
 
     if (p_dynarray->used_count == p_dynarray->len)
     {   /* array is full, must grow */
-        return dynarray_grow(p_dynarray, object, obj_size, item_size);
+        return dynarray_append(p_dynarray, object, obj_size, item_size);
     }
     else
     {   /* array has space, find a free item and reuse it */
@@ -220,28 +220,101 @@ int dynarray_compact(struct _dynarray_abs *p_dynarray, int force,
 
 
 /*
+ * Truncate a dynarray to a specific length.
+ *
+ * Receives the dynarray, the desired length and the size of items in this
+ * array. If the dynarray is larger than the specified size, the extra data
+ * is lost. If the dynarray is smaller than the specified size, it is
+ * extended, and the extra items are all set to empty.
+ *
+ * Returns 0 in case of success, non-zero otherwise.
+ */
+int dynarray_truncate(struct _dynarray_abs *p_dynarray, int len,
+        size_t item_size)
+{
+    assert(p_dynarray->len >= 0);
+
+    if (unlikely(len < 0))
+        return NC_EINVAL;
+
+    if (len == p_dynarray->len)
+    {
+        /* truncate to same size, do nothing */
+    }
+    else if (len == 0)
+    {   /* clear the array */
+        if (p_dynarray->items != NULL)
+            free(p_dynarray->items);
+
+        p_dynarray->len = 0;
+        p_dynarray->used_count = 0;
+        p_dynarray->items = NULL;
+    }
+    else
+    {   /* grow or shrink */
+        void *items = realloc(p_dynarray->items, len * item_size);
+
+        if (unlikely(items == NULL))
+            return NC_ENOMEM;
+
+        p_dynarray->items = items;
+
+        if (len > p_dynarray->len)
+        {   /* growing; initialize empty items */
+            int i;
+
+            for (i=p_dynarray->len; i<len; i++)
+            {
+                struct _item_abs *item = get_nth_item(items, i, item_size);
+
+                item->used = 0;
+            }
+        }
+        else
+        {   /* shrinking; update used_count in case we eliminated used items */
+            int used_count = 0;
+            int i;
+
+            for (i=0; i<len; i++)
+            {
+                const struct _item_abs *item = get_nth_item(items, i, item_size);
+
+                if (item->used)
+                    used_count++;
+            }
+
+            p_dynarray->used_count = used_count;
+        }
+
+        p_dynarray->len = len;
+    }
+
+    return 0;
+}
+
+
+
+/*
  * Grow a dynarray and add a new item at the end.
  *
  * Receives the dynarray, the object and its size, and the size of items for
- * this array. Returns the index of the newly added item. In case of error
- * (insufficient memory), returns -1.
+ * this array. Returns the index of the newly added item in case of
+ * success, or a negative error value in case of error.
  */
-static int dynarray_grow(struct _dynarray_abs *p_dynarray,
+static int dynarray_append(struct _dynarray_abs *p_dynarray,
         const void *object, size_t obj_size, size_t item_size)
 {
+    int new_index = p_dynarray->len;
+    int retval;
+
     /* XXX: Maybe we should grow in chunks, instead of 1 at a time. */
-    const int new_len = p_dynarray->len + 1;
-    const int new_index = p_dynarray->len;
-    void *items = realloc(p_dynarray->items, item_size * new_len);
-
-    if (unlikely(items == NULL))
-        return NC_ENOMEM;
-
-    p_dynarray->items = items;
-    p_dynarray->len = new_len;
-    p_dynarray->used_count = new_len;
+    retval = dynarray_truncate(p_dynarray, p_dynarray->len + 1, item_size);
+    if (retval != 0)
+        return retval;
 
     set_item(p_dynarray->items, new_index, object, obj_size, item_size);
+
+    p_dynarray->used_count++;
 
     return new_index;
 }
