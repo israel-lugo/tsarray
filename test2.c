@@ -12,7 +12,8 @@ void print_array(void)
 {
     int i;
 
-    puts("\nReading all used items in array");
+    printf("\nArray len=%d, used_count=%d, min_len=%d. Used items:\n",
+           a1.len, a1.used_count, a1.min_len);
     for (i = 0; i < a1.len; i++)
     {
         if (a1.items[i].used)
@@ -25,6 +26,11 @@ int main(void)
 {
     int count = 5;
     int i;
+    int retval;
+
+    printf("Setting minimum array length 7\n");
+    intarray_setminlen(&a1, 7);
+    print_array();
 
     printf("Adding %d ints starting from 50\n", count);
     for (i = 50; i < 50 + count; i++)
@@ -65,6 +71,15 @@ int main(void)
     puts("\nAdding 69 to the array");
     i = 69;
     intarray_add(&a1, &i);
+
+    print_array();
+
+    puts("\nTrying to truncate to len=2");
+    retval = intarray_truncate(&a1, 2);
+    printf("Return code: %d\n", retval);
+
+    puts("\nSetting minimum length to 1");
+    intarray_setminlen(&a1, 1);
 
     print_array();
 

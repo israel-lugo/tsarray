@@ -131,6 +131,36 @@ int dynarray_remove(struct _dynarray_abs *p_dynarray, int index,
 
 
 /*
+ * Set a dynarray's minimum length.
+ *
+ * If the specified minimum length is greater than the current length, the
+ * array is grown accordingly. Returns 0 in case of success, non-zero
+ * otherwise.
+ */
+int dynarray_setminlen(struct _dynarray_abs *p_dynarray, int min_len,
+        size_t item_size)
+{
+    if (unlikely(min_len < 0))
+        return NC_EINVAL;
+
+    if (min_len <= p_dynarray->len)
+        p_dynarray->min_len = min_len;
+    else
+    {   /* minimum length greater than current length; we must grow */
+        int retval = dynarray_truncate(p_dynarray, min_len, item_size);
+
+        if (unlikely(retval != 0))
+            return retval;
+
+        p_dynarray->min_len = min_len;
+    }
+
+    return 0;
+}
+
+
+
+/*
  * Compact a dynarray, removing all empty items.
  *
  * Removes all empty items ("holes") from a dynarray, by rearranging it so
@@ -148,6 +178,9 @@ int dynarray_compact(struct _dynarray_abs *p_dynarray, int force,
 {
     int hole_count;
     int hole_pct;
+
+    assert(p_dynarray->len >= 0);
+    assert(p_dynarray->used_count >= 0);
 
     /* skip empty arrays (avoid division by zero below) */
     if (p_dynarray->len == 0)
@@ -175,6 +208,7 @@ int dynarray_compact(struct _dynarray_abs *p_dynarray, int force,
         const int len = p_dynarray->len;
         int first_hole = INT_MAX;
         int i;
+        int new_len;
 
         assert(p_dynarray->used_count < len);
 
@@ -206,12 +240,17 @@ int dynarray_compact(struct _dynarray_abs *p_dynarray, int force,
          * entered, so first_hole can't be INT_MAX. */
         assert(first_hole == p_dynarray->used_count);
 
-        items = realloc(items, item_size * first_hole);
-        if (unlikely(items == NULL))
-            return NC_ENOMEM;
+        /* make sure we don't shrink below configured minimum */
+        new_len = max(first_hole, p_dynarray->min_len);
+        if (new_len != len)
+        {
+            items = realloc(items, item_size * new_len);
+            if (unlikely(items == NULL))
+                return NC_ENOMEM;
 
-        p_dynarray->items = items;
-        p_dynarray->len = first_hole;
+            p_dynarray->items = items;
+            p_dynarray->len = new_len;
+        }
     }
 
     return 0;
@@ -233,8 +272,9 @@ int dynarray_truncate(struct _dynarray_abs *p_dynarray, int len,
         size_t item_size)
 {
     assert(p_dynarray->len >= 0);
+    assert(p_dynarray->min_len >= 0);
 
-    if (unlikely(len < 0))
+    if (unlikely(len < 0 || len < p_dynarray->min_len))
         return NC_EINVAL;
 
     if (len == p_dynarray->len)

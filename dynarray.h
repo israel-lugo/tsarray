@@ -52,6 +52,7 @@
 struct _dynarray_abs {
     int len;
     int used_count;
+    int min_len;
     struct _item_abs *items;
 };
 
@@ -68,12 +69,15 @@ int dynarray_compact(struct _dynarray_abs *p_dynarray, int force,
 int dynarray_truncate(struct _dynarray_abs *p_dynarray, int len,
         size_t item_size) __NON_NULL;
 
+int dynarray_setminlen(struct _dynarray_abs *p_dynarray, int min_len,
+        size_t item_size) __NON_NULL;
+
 
 /* Initializer for an empty dynarray. When assigning to an already declared
  * array, this must be transformed into a compound literal (by prepending
  * the type name in parenthesis), e.g.: (intarray)DYNARRAY_EMPTY
  */
-#define DYNARRAY_EMPTY { 0, 0, NULL }
+#define DYNARRAY_EMPTY { 0, 0, 0, NULL }
 
 
 #define DYNARRAY_TYPE_DECLARE(name, type) \
@@ -84,6 +88,7 @@ int dynarray_truncate(struct _dynarray_abs *p_dynarray, int len,
     typedef struct { \
         int len; \
         int used_count; \
+        int min_len; \
         struct name##_item *items; \
     } name; \
     static inline int name##_add(name *array, type *object) { \
@@ -105,6 +110,10 @@ int dynarray_truncate(struct _dynarray_abs *p_dynarray, int len,
     static inline int name##_truncate(name *array, int len) { \
         return dynarray_truncate((struct _dynarray_abs *)array, len, \
                                  sizeof(struct name##_item)); \
+    } \
+    static inline int name##_setminlen(name *array, int len) { \
+        return dynarray_setminlen((struct _dynarray_abs *)array, len, \
+                                  sizeof(struct name##_item)); \
     }
 
 
