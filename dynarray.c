@@ -347,6 +347,16 @@ static int dynarray_append(struct _dynarray_abs *p_dynarray,
     int old_len = p_dynarray->len;
     int retval;
 
+    /*
+     * TODO: This should be public. User should be able to add to the end
+     * of the array, instead of at the first available hole. Problem is,
+     * providing this possibility will limit us to only growing by 1 when
+     * appending (otherwise user can't be expected to know exactly where
+     * the end of the array is). This is actually a problem anyway, if we
+     * want the len field to be of any meaning to the user. We have to
+     * think whether we want to provide meaningful ordering or not.
+     */
+
     /* protect from overflowing into negative lengths */
     if (!can_sadd(old_len, 1))
         return NC_EOVERFLOW;
