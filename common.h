@@ -39,6 +39,9 @@
 
 #include <stdlib.h>
 
+/* get INT_MIN and INT_MAX */
+#include <limits.h>
+
 
 #if !defined(DEBUG) || !DEBUG
 #  define NDEBUG 1
@@ -83,6 +86,18 @@
        __attribute__((alias(#private_func), visibility("default")));
 #endif
 
+
+static inline int can_sadd(const int x, const int y) __ATTR_CONST;
+
+
+/*
+ * Check whether two signed integers can be added without overflowing.
+ */
+static inline int can_sadd(const int x, const int y)
+{
+    return likely((x <= 0 || y <= INT_MAX - x)
+                  && (x >= 0 || y >= INT_MIN - x));
+}
 
 
 

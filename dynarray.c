@@ -304,19 +304,23 @@ int dynarray_truncate(struct _dynarray_abs *p_dynarray, int len,
 static int dynarray_append(struct _dynarray_abs *p_dynarray,
         const void *object, size_t obj_size, size_t item_size)
 {
-    int new_index = p_dynarray->len;
+    int old_len = p_dynarray->len;
     int retval;
 
+    /* protect from overflowing into negative lengths */
+    if (!can_sadd(old_len, 1))
+        return NC_EOVERFLOW;
+
     /* XXX: Maybe we should grow in chunks, instead of 1 at a time. */
-    retval = dynarray_truncate(p_dynarray, p_dynarray->len + 1, item_size);
+    retval = dynarray_truncate(p_dynarray, old_len + 1, item_size);
     if (retval != 0)
         return retval;
 
-    set_item(p_dynarray->items, new_index, object, obj_size, item_size);
+    set_item(p_dynarray->items, old_len, object, obj_size, item_size);
 
     p_dynarray->used_count++;
 
-    return new_index;
+    return old_len;
 }
 
 
