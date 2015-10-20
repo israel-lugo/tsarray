@@ -58,7 +58,7 @@ struct _dynarray_abs {
 
 
 int dynarray_add(struct _dynarray_abs *p_dynarray, const void *object,
-        size_t obj_size, size_t item_size) __NON_NULL;
+        size_t obj_size, size_t item_size) __attribute__((nonnull (1)));
 
 int dynarray_remove(struct _dynarray_abs *p_dynarray, int index,
         size_t item_size) __NON_NULL;

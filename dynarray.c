@@ -67,18 +67,22 @@ static int find_free_item(const struct _dynarray_abs *p_dynarray,
         size_t item_size) __ATTR_CONST __NON_NULL;
 
 static int dynarray_append(struct _dynarray_abs *p_dynarray,
-        const void *object, size_t obj_size, size_t item_size) __NON_NULL;
+        const void *object, size_t obj_size, size_t item_size);
 
 static int dynarray_reuse(struct _dynarray_abs *p_dynarray,
-        const void *object, size_t obj_size, size_t item_size) __NON_NULL;
+        const void *object, size_t obj_size, size_t item_size);
 
 
 /*
  * Add an item to a dynarray, growing or reusing free items as required.
  *
- * Receives the dynarray, the object and its size, and the size of items
- * in this array. Returns the index of the newly added item in case of
- * success, or a negative error value in case of error.
+ * Receives the dynarray, an optional object, the object size for this
+ * array, and the size of items in this array. Will find space for a new
+ * item in the array, whether it be by reusing a free item or by growing
+ * the array. If object is non-NULL, it will be copied to the new item.
+ *
+ * Returns the index of the newly added item in case of success, or a
+ * negative error value in case of error.
  */
 int dynarray_add(struct _dynarray_abs *p_dynarray, const void *object,
         size_t obj_size, size_t item_size)
@@ -337,9 +341,13 @@ int dynarray_truncate(struct _dynarray_abs *p_dynarray, int len,
 /*
  * Grow a dynarray and add a new item at the end.
  *
- * Receives the dynarray, the object and its size, and the size of items for
- * this array. Returns the index of the newly added item in case of
- * success, or a negative error value in case of error.
+ * Receives the dynarray, an optional object, the object size for this
+ * array, and the size of items in this array. Will grow the array to make
+ * space for a new item. If object is non-NULL, it will be copied to the
+ * new item.
+ *
+ * Returns the index of the newly added item in case of success, or a
+ * negative error value in case of error.
  */
 static int dynarray_append(struct _dynarray_abs *p_dynarray,
         const void *object, size_t obj_size, size_t item_size)
@@ -366,9 +374,11 @@ static int dynarray_append(struct _dynarray_abs *p_dynarray,
     if (retval != 0)
         return retval;
 
-    set_item(p_dynarray->items, old_len, object, obj_size, item_size);
-
-    p_dynarray->used_count++;
+    if (object != NULL)
+    {
+        set_item(p_dynarray->items, old_len, object, obj_size, item_size);
+        p_dynarray->used_count++;
+    }
 
     return old_len;
 }
@@ -378,8 +388,12 @@ static int dynarray_append(struct _dynarray_abs *p_dynarray,
 /*
  * Reuse a free item in a dynarray.
  *
- * Receives the dynarray, the object and its size, and the size of items for
- * this array. Returns the index where the item was stored.
+ * Receives the dynarray, an optional object, the object size for this
+ * array, and the size of items in this array. Will find a free item which
+ * can be reused. At least one free item MUST already exist. If object is
+ * non-NULL, it will be copied to the new item.
+ *
+ * Returns the index where the item was stored.
  */
 static int dynarray_reuse(struct _dynarray_abs *p_dynarray,
         const void *object, size_t obj_size, size_t item_size)
@@ -387,11 +401,13 @@ static int dynarray_reuse(struct _dynarray_abs *p_dynarray,
     int first_free = find_free_item(p_dynarray, item_size);
 
     assert(first_free != -1);
+    assert(p_dynarray->used_count < p_dynarray->len);
 
-    set_item(p_dynarray->items, first_free, object, obj_size, item_size);
-    p_dynarray->used_count++;
-
-    assert(p_dynarray->used_count <= p_dynarray->len);
+    if (object != NULL)
+    {
+        set_item(p_dynarray->items, first_free, object, obj_size, item_size);
+        p_dynarray->used_count++;
+    }
 
     return first_free;
 }
