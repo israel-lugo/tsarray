@@ -1,6 +1,6 @@
 /*
  * libncraft - network crafting library
- * Copyright 2005, 2006, 2007, 2008, 2009 Israel G. Lugo
+ * Copyright 2005, 2006, 2007, 2008, 2009, 2016 Israel G. Lugo
  *
  * This file is part of libncraft.
  *
@@ -400,7 +400,7 @@ static int dynarray_reuse(struct _dynarray_abs *p_dynarray,
 {
     int first_free = find_free_item(p_dynarray, item_size);
 
-    assert(first_free != -1);
+    assert(first_free != NC_ENOENT);
     assert(p_dynarray->used_count < p_dynarray->len);
 
     if (object != NULL)
