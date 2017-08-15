@@ -46,6 +46,17 @@
 #include "common.h"
 
 
+/*
+ * Error values returned by API functions. Always negative in case of error.
+ */
+enum dynarray_errno {
+    DYNARRAY_EOK = 0,        /* Success */
+    DYNARRAY_EINVAL = -1,    /* Invalid argument */
+    DYNARRAY_ENOENT = -2,    /* No such entry */
+    DYNARRAY_ENOMEM = -3,    /* Out of memory */
+    DYNARRAY_EOVERFLOW = -4, /* Operation would overflow */
+};
+
 
 /* abstract versions; only for internal use (must match the subclassed
  * versions in DYNARRAY_TYPE_DECLARE) */
@@ -121,4 +132,4 @@ int dynarray_setminlen(struct _dynarray_abs *p_dynarray, int min_len,
 #endif      /* not _DYNARRAY_H */
 
 
-/* vim: set expandtab smarttab shiftwidth=4 softtabstop=4 tw=75 : */
+/* vim: set expandtab smarttab shiftwidth=4 softtabstop=4 tw=78 : */

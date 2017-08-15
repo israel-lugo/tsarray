@@ -39,9 +39,6 @@
 /* get memcpy */
 #include <string.h>
 
-/* get error codes */
-#include <ncraft.h>
-
 #include "dynarray.h"
 #include "common.h"
 
@@ -119,7 +116,7 @@ int dynarray_remove(struct _dynarray_abs *p_dynarray, int index,
      * separate operation to explicitly compact the array. */
 
     if (index >= p_dynarray->len)
-        return NC_EINVAL;
+        return DYNARRAY_EINVAL;
 
     item = get_nth_item(p_dynarray->items, index, item_size);
 
@@ -145,7 +142,7 @@ int dynarray_setminlen(struct _dynarray_abs *p_dynarray, int min_len,
         size_t item_size)
 {
     if (unlikely(min_len < 0))
-        return NC_EINVAL;
+        return DYNARRAY_EINVAL;
 
     if (min_len <= p_dynarray->len)
         p_dynarray->min_len = min_len;
@@ -250,7 +247,7 @@ int dynarray_compact(struct _dynarray_abs *p_dynarray, int force,
         {
             items = realloc(items, item_size * new_len);
             if (unlikely(items == NULL))
-                return NC_ENOMEM;
+                return DYNARRAY_ENOMEM;
 
             p_dynarray->items = items;
             p_dynarray->len = new_len;
@@ -279,7 +276,7 @@ int dynarray_truncate(struct _dynarray_abs *p_dynarray, int len,
     assert(p_dynarray->min_len >= 0);
 
     if (unlikely(len < 0 || len < p_dynarray->min_len))
-        return NC_EINVAL;
+        return DYNARRAY_EINVAL;
 
     if (len == p_dynarray->len)
     {
@@ -299,7 +296,7 @@ int dynarray_truncate(struct _dynarray_abs *p_dynarray, int len,
         void *items = realloc(p_dynarray->items, len * item_size);
 
         if (unlikely(items == NULL))
-            return NC_ENOMEM;
+            return DYNARRAY_ENOMEM;
 
         p_dynarray->items = items;
 
@@ -367,7 +364,7 @@ static int dynarray_append(struct _dynarray_abs *p_dynarray,
 
     /* protect from overflowing into negative lengths */
     if (!can_sadd(old_len, 1))
-        return NC_EOVERFLOW;
+        return DYNARRAY_EOVERFLOW;
 
     /* XXX: Maybe we should grow in chunks, instead of 1 at a time. */
     retval = dynarray_truncate(p_dynarray, old_len + 1, item_size);
@@ -400,7 +397,7 @@ static int dynarray_reuse(struct _dynarray_abs *p_dynarray,
 {
     int first_free = find_free_item(p_dynarray, item_size);
 
-    assert(first_free != NC_ENOENT);
+    assert(first_free != DYNARRAY_ENOENT);
     assert(p_dynarray->used_count < p_dynarray->len);
 
     if (object != NULL)
@@ -447,7 +444,7 @@ static void set_item(struct _item_abs *items, int index,
 /*
  * Find the first free item in an array.
  *
- * Returns the item's index or NC_ENOENT if no free item was found.
+ * Returns the item's index or DYNARRAY_ENOENT if no free item was found.
  */
 static int find_free_item(const struct _dynarray_abs *p_dynarray,
         size_t item_size)
@@ -462,7 +459,7 @@ static int find_free_item(const struct _dynarray_abs *p_dynarray,
             return i;
     }
 
-    return NC_ENOENT;
+    return DYNARRAY_ENOENT;
 }
 
 
