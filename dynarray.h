@@ -26,7 +26,6 @@
  * dynarray.h - dynamic array module header
  */
 
-/* $Id: dynarray.h 267 2012-06-13 19:47:59Z capi $ */
 
 #ifndef _DYNARRAY_H
 #define _DYNARRAY_H

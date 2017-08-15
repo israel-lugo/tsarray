@@ -26,8 +26,6 @@
  * compiler.h - compiler-dependent definitions
  */
 
-/* $Id$ */
-
 
 #ifndef _COMPILER_H
 #define _COMPILER_H

@@ -26,8 +26,6 @@
  * common.h - common definitions header
  */
 
-/* $Id$ */
-
 
 #ifndef _COMMON_H
 #define _COMMON_H

@@ -26,8 +26,6 @@
  * dynarray.c - dynamic array module
  */
 
-/* $Id: dynarray.c 267 2012-06-13 19:47:59Z capi $ */
-
 
 #if HAVE_CONFIG_H
 #  include <config.h>
