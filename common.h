@@ -1,21 +1,21 @@
 /*
- * libncraft - network crafting library
- * Copyright 2005, 2006, 2007, 2008, 2009, 2010, 2012 Israel G. Lugo
+ * dynarray - type-safe dynamic array library
+ * Copyright 2012, 2015, 2016, 2017 Israel G. Lugo
  *
- * This file is part of libncraft.
+ * This file is part of dynarray.
  *
- * libncraft is free software: you can redistribute it and/or modify
+ * dynarray is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * libncraft is distributed in the hope that it will be useful,
+ * dynarray is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with libncraft.  If not, see <http://www.gnu.org/licenses/>.
+ * along with dynarray.  If not, see <http://www.gnu.org/licenses/>.
  *
  * For suggestions, feedback or bug reports: israel.lugo@lugosys.com
  */
@@ -71,7 +71,7 @@
 
 
 /* Copyright message to be used in printed messages */
-#define COPYRIGHT "Copyright (C) 2005, 2006, 2007, 2008 Israel G. Lugo"
+#define COPYRIGHT "Copyright (C) 2012, 2015, 2016, 2017 Israel G. Lugo"
 
 
 
