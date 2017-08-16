@@ -5,7 +5,7 @@
 TSARRAY_TYPEDEF(intarray, int);
 
 
-intarray a1 = TSARRAY_EMPTY;
+intarray a1 = TSARRAY_INITIALIZER;
 
 
 int main(void)

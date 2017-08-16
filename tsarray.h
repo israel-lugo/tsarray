@@ -87,9 +87,9 @@ int tsarray_setminlen(struct _tsarray_abs *p_tsarray, int min_len,
  * a declaration, or as rvalue on an assignment expression (for an already
  * declared identifier). In the latter case, this must be must be transformed
  * into a compound literal (by prepending the type name in parenthesis), e.g.:
- *      a1 = (intarray)TSARRAY_EMPTY;
+ *      a1 = (intarray)TSARRAY_INITIALIZER;
  */
-#define TSARRAY_EMPTY { 0, 0, 0, NULL }
+#define TSARRAY_INITIALIZER { 0, 0, 0, NULL }
 
 
 /*
