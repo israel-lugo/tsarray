@@ -1,0 +1,13 @@
+*.o
+*.a
+*.la
+*.lo
+*.so
+*.so.*
+
+# Vim stuff
+.*.swp
+
+# Compiled binaries
+test
+test2
