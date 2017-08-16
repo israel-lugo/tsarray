@@ -92,40 +92,50 @@ int tsarray_setminlen(struct _tsarray_abs *p_tsarray, int min_len,
 #define TSARRAY_EMPTY { 0, 0, 0, NULL }
 
 
-#define TSARRAY_TYPEDEF(name, type) \
-    struct name##_item { \
+/*
+ * Declare a new type-specific tsarray type.
+ *
+ * Defines (typedefs) arraytype to the new tsarray type, which will store
+ * objects of type objtype. Defines type-specific functions to manipulate the
+ * new array type using the prefix arraytype_*, e.g. intarray_add(), etc.
+ *
+ * Example (define intarray as an array of int):
+ *      TSARRAY_TYPEDEF(intarray, int);
+ */
+#define TSARRAY_TYPEDEF(arraytype, objtype) \
+    struct arraytype##_item { \
         int used; \
-        type object; \
+        objtype object; \
     }; \
     typedef struct { \
         int len; \
         int used_count; \
         int min_len; \
-        struct name##_item *items; \
-    } name; \
-    static inline int name##_add(name *array, type *object) { \
+        struct arraytype##_item *items; \
+    } arraytype; \
+    static inline int arraytype##_add(arraytype *array, objtype *object) { \
         return tsarray_add((struct _tsarray_abs *)array, object, \
-                            sizeof(type), sizeof(struct name##_item)); \
+                            sizeof(objtype), sizeof(struct arraytype##_item)); \
     } \
-    static inline int name##_remove(name *array, int index) { \
+    static inline int arraytype##_remove(arraytype *array, int index) { \
         return tsarray_remove((struct _tsarray_abs *)array, index, \
-                               sizeof(struct name##_item)); \
+                               sizeof(struct arraytype##_item)); \
     } \
-    static inline type *name##_get_nth(name *array, int index) { \
-        struct name##_item *item = &array->items[index]; \
+    static inline objtype *arraytype##_get_nth(arraytype *array, int index) { \
+        struct arraytype##_item *item = &array->items[index]; \
         return likely(item->used) ? &item->object : NULL; \
     } \
-    static inline int name##_compact(name *array, int force) { \
+    static inline int arraytype##_compact(arraytype *array, int force) { \
         return tsarray_compact((struct _tsarray_abs *)array, force, \
-                                sizeof(type), sizeof(struct name##_item)); \
+                                sizeof(objtype), sizeof(struct arraytype##_item)); \
     } \
-    static inline int name##_truncate(name *array, int len) { \
+    static inline int arraytype##_truncate(arraytype *array, int len) { \
         return tsarray_truncate((struct _tsarray_abs *)array, len, \
-                                 sizeof(struct name##_item)); \
+                                 sizeof(struct arraytype##_item)); \
     } \
-    static inline int name##_setminlen(name *array, int len) { \
+    static inline int arraytype##_setminlen(arraytype *array, int len) { \
         return tsarray_setminlen((struct _tsarray_abs *)array, len, \
-                                  sizeof(struct name##_item)); \
+                                  sizeof(struct arraytype##_item)); \
     }
 
 
