@@ -2,7 +2,7 @@
 
 #include "tsarray.h"
 
-TSARRAY_TYPE_DECLARE(intarray, int);
+TSARRAY_TYPEDEF(intarray, int);
 
 
 intarray a1 = TSARRAY_EMPTY;

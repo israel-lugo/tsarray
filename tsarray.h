@@ -58,7 +58,7 @@ enum tsarray_errno {
 
 
 /* abstract versions; only for internal use (must match the subclassed
- * versions in TSARRAY_TYPE_DECLARE) */
+ * versions in TSARRAY_TYPEDEF) */
 struct _tsarray_abs {
     int len;
     int used_count;
@@ -92,7 +92,7 @@ int tsarray_setminlen(struct _tsarray_abs *p_tsarray, int min_len,
 #define TSARRAY_EMPTY { 0, 0, 0, NULL }
 
 
-#define TSARRAY_TYPE_DECLARE(name, type) \
+#define TSARRAY_TYPEDEF(name, type) \
     struct name##_item { \
         int used; \
         type object; \
