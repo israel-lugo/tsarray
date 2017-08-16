@@ -1,11 +1,11 @@
 #include <stdio.h>
 
-#include "dynarray.h"
+#include "tsarray.h"
 
-DYNARRAY_TYPE_DECLARE(intarray, int);
+TSARRAY_TYPE_DECLARE(intarray, int);
 
 
-intarray a1 = DYNARRAY_EMPTY;
+intarray a1 = TSARRAY_EMPTY;
 
 
 void print_array(void)

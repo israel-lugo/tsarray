@@ -1,5 +1,5 @@
 
-OBJ_FILES = dynarray.o test.o test2.o
+OBJ_FILES = tsarray.o test.o test2.o
 BIN_FILES = test test2
 
 
@@ -12,16 +12,16 @@ all: tests
 tests: test test2
 
 
-test2: test2.o dynarray.o
+test2: test2.o tsarray.o
 
 
-test: test.o dynarray.o
+test: test.o tsarray.o
 
 
 clean:
 	rm -f $(OBJ_FILES) $(BIN_FILES)
 
 
-dynarray.o: dynarray.h common.h compiler.h
-test2.o: dynarray.h common.h compiler.h
-test.o: dynarray.h common.h compiler.h
+tsarray.o: tsarray.h common.h compiler.h
+test2.o: tsarray.h common.h compiler.h
+test.o: tsarray.h common.h compiler.h
