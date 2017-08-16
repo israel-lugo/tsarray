@@ -83,15 +83,6 @@ int tsarray_setminlen(struct _tsarray_abs *p_tsarray, int min_len,
         size_t item_size) __NON_NULL;
 
 
-/* Initializer for an empty tsarray. May be used directly as initializer on
- * a declaration, or as rvalue on an assignment expression (for an already
- * declared identifier). In the latter case, this must be must be transformed
- * into a compound literal (by prepending the type name in parenthesis), e.g.:
- *      a1 = (intarray)TSARRAY_INITIALIZER;
- */
-#define TSARRAY_INITIALIZER { 0, 0, 0, NULL }
-
-
 /*
  * Declare a new type-specific tsarray type.
  *
@@ -138,6 +129,15 @@ int tsarray_setminlen(struct _tsarray_abs *p_tsarray, int min_len,
                                   sizeof(struct arraytype##_item)); \
     }
 
+
+
+/* Initializer for an empty tsarray. May be used directly as initializer on
+ * a declaration, or as rvalue on an assignment expression (for an already
+ * declared identifier). In the latter case, this must be must be transformed
+ * into a compound literal (by prepending the type name in parenthesis), e.g.:
+ *      a1 = (intarray)TSARRAY_INITIALIZER;
+ */
+#define TSARRAY_INITIALIZER { 0, 0, 0, NULL }
 
 
 #endif      /* not _TSARRAY_H */
