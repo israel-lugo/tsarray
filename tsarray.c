@@ -73,11 +73,11 @@ static void set_item(void *items, int index, const void *object,
  * array's length, and resizes the array if necessary.
  *
  * If the new length is beyond the array's capacity, the array will be
- * enlarged. If the new length is below the capacity divided by
- * MIN_USAGE_RATIO, the array will be shrunk.
+ * enlarged. If the new length is below a minimum ratio of the capacity
+ * (MIN_USAGE_RATIO), the array will be shrunk.
  *
- * The new capacity is always calculated as:
- *      capacity = len*(1 + 1/MARGIN_RATIO) + MIN_MARGIN
+ * If a resize is necessary, the new capacity will be calculated as:
+ *      capacity = new_len*(1 + 1/MARGIN_RATIO) + MIN_MARGIN
  *
  * Returns zero in case of success, a negative error value otherwise.
  */
