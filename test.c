@@ -1,11 +1,11 @@
 #include <stdio.h>
 
-#include "tsarray.h"
+#include "tssparse.h"
 
-TSARRAY_TYPEDEF(intarray, int);
+TSSPARSE_TYPEDEF(intarray, int);
 
 
-intarray a1 = TSARRAY_INITIALIZER;
+intarray a1 = TSSPARSE_INITIALIZER;
 
 
 int main(void)
