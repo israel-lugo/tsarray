@@ -119,7 +119,7 @@ int tsarray_append(struct _tsarray_abs *p_tsarray, const void *object,
  * into a compound literal (by prepending the type name in parenthesis), e.g.:
  *      a1 = (intarray)TSARRAY_INITIALIZER;
  */
-#define TSARRAY_INITIALIZER { 0, 0, 0, NULL }
+#define TSARRAY_INITIALIZER { 0, NULL, { 0 } }
 
 
 #endif      /* not _TSARRAY_H */
