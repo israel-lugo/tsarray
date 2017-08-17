@@ -66,6 +66,21 @@ static void set_item(void *items, int index, const void *object,
         size_t obj_size) __NON_NULL;
 
 
+/*
+ * Sets a tsarray's length, adjusting its capacity if necessary.
+ *
+ * Receives the tsarray, the new length, and the object size. Sets the
+ * array's length, and resizes the array if necessary.
+ *
+ * If the new length is beyond the array's capacity, the array will be
+ * enlarged. If the new length is below the capacity divided by
+ * MIN_USAGE_RATIO, the array will be shrunk.
+ *
+ * The new capacity is always calculated as:
+ *      capacity = len*(1 + 1/MARGIN_RATIO) + MIN_MARGIN
+ *
+ * Returns zero in case of success, a negative error value otherwise.
+ */
 static int tsarray_resize(struct _tsarray_abs *p_tsarray, size_t new_len,
         size_t obj_size)
 {
