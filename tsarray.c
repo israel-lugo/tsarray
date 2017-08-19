@@ -34,7 +34,7 @@
 /* get INT_MAX */
 #include <limits.h>
 
-/* get memcpy */
+/* get memcpy and memmove */
 #include <string.h>
 
 #include "tsarray.h"
@@ -154,6 +154,37 @@ int tsarray_append(struct _tsarray_abs *p_tsarray, const void *object,
     set_item(p_tsarray->items, old_len, object, obj_size);
 
     return 0;
+}
+
+
+/*
+ * Remove one item from a tsarray.
+ *
+ * Receives a tsarray, the index of the item to remove, and the size of the
+ * array's objects. Removes the item with the specified index and compacts
+ * the array, by moving back any items with higher indices.
+ *
+ * Returns zero in case of success, or a negative error value otherwise.
+ */
+int tsarray_remove(struct _tsarray_abs *p_tsarray, int index, size_t obj_size)
+{
+    const size_t old_len = p_tsarray->len;
+
+    if (unlikely(index >= old_len))
+        return TSARRAY_ENOENT;
+
+    assert(old_len <= p_tsarray->_priv.capacity);
+    assert(old_len <= SIZE_MAX / obj_size);
+
+    if (index < old_len-1)
+    {   /* there's data to the right, need to move it left */
+        const size_t bytes_to_move = (old_len - index - 1)*obj_size;
+        void *item_to_rm = get_nth_item(p_tsarray->items, index, obj_size);
+
+        memmove(item_to_rm, item_to_rm+obj_size, bytes_to_move);
+    }
+
+    return tsarray_resize(p_tsarray, old_len-1, obj_size);
 }
 
 

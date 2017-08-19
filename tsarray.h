@@ -89,6 +89,9 @@ struct _tsarray_abs {
 int tsarray_append(struct _tsarray_abs *p_tsarray, const void *object,
         size_t obj_size) __NON_NULL;
 
+int tsarray_remove(struct _tsarray_abs *p_tsarray, int index,
+        size_t obj_size) __NON_NULL;
+
 
 /*
  * Declare a new type-specific tsarray type.
@@ -109,8 +112,11 @@ int tsarray_append(struct _tsarray_abs *p_tsarray, const void *object,
     static inline int arraytype##_append(arraytype *array, objtype *object) { \
         return tsarray_append((struct _tsarray_abs *)array, object, \
                 sizeof(objtype)); \
+    } \
+    static inline int arraytype##_remove(arraytype *array, size_t index) { \
+        return tsarray_remove((struct _tsarray_abs *)array, index, \
+                sizeof(objtype)); \
     }
-
 
 
 /* Initializer for an empty tsarray. May be used directly as initializer on
