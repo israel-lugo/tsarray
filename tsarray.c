@@ -59,10 +59,10 @@
 #define MIN_USAGE_RATIO 2
 
 
-static inline void *get_nth_item(const void *items, int index,
+static inline void *get_nth_item(const void *items, size_t index,
         size_t obj_size) __ATTR_CONST __NON_NULL;
 
-static void set_item(void *items, int index, const void *object,
+static void set_item(void *items, size_t index, const void *object,
         size_t obj_size) __NON_NULL;
 
 
@@ -163,7 +163,7 @@ int tsarray_append(struct _tsarray_abs *p_tsarray, const void *object,
  * Get the Nth object from a tsarray's abstract item array, given its
  * index and the size of the array's objects.
  */
-static inline void *get_nth_item(const void *items, int index,
+static inline void *get_nth_item(const void *items, size_t index,
         size_t obj_size)
 {
     /* void * has alignment of 1 */
@@ -177,7 +177,7 @@ static inline void *get_nth_item(const void *items, int index,
  * Receives the tsarray's abstract item array, the index of the item
  * to set, the object and its size.
  */
-static void set_item(void *items, int index, const void *object,
+static void set_item(void *items, size_t index, const void *object,
         size_t obj_size)
 {
     void *item = get_nth_item(items, index, obj_size);
