@@ -1,6 +1,6 @@
 
-OBJ_FILES = tsarray.o tssparse.o test.o test2.o
-BIN_FILES = test test2
+OBJ_FILES = tsarray.o tssparse.o test-sparse.o test2-sparse.o
+BIN_FILES = test-sparse test2-sparse
 
 
 CFLAGS ?= -g -Wall
@@ -9,13 +9,13 @@ CFLAGS ?= -g -Wall
 all: tests tsarray.o
 
 
-tests: test test2
+tests: test-sparse test2-sparse
 
 
-test2: test2.o tssparse.o
+test2-sparse: test2-sparse.o tssparse.o
 
 
-test: test.o tssparse.o
+test-sparse: test-sparse.o tssparse.o
 
 
 clean:
@@ -25,5 +25,5 @@ clean:
 
 tsarray.o: tssparse.h common.h compiler.h
 tssparse.o: tssparse.h common.h compiler.h
-test.o: tssparse.h common.h compiler.h
-test2.o: tssparse.h common.h compiler.h
+test-sparse.o: tssparse.h common.h compiler.h
+test2-sparse.o: tssparse.h common.h compiler.h
