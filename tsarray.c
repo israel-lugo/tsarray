@@ -153,7 +153,7 @@ int tsarray_append(struct _tsarray_abs *p_tsarray, const void *object,
         return retval;
 
     /* there has to be room after a resize */
-    assert(p_tsarray->len < p_tsarray->_priv.capacity);
+    assert(p_tsarray->len <= p_tsarray->_priv.capacity);
 
     set_item(p_tsarray->items, old_len, object, obj_size);
 
