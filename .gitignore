@@ -9,5 +9,7 @@
 .*.swp
 
 # Compiled binaries
-test
-test2
+test-array
+test2-array
+test-sparse
+test2-sparse
