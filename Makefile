@@ -23,7 +23,7 @@ clean:
 
 # DO NOT DELETE
 
-tsarray.o: tssparse.h common.h compiler.h
+tsarray.o: tsarray.h common.h compiler.h
 tssparse.o: tssparse.h common.h compiler.h
 test-sparse.o: tssparse.h common.h compiler.h
 test2-sparse.o: tssparse.h common.h compiler.h
