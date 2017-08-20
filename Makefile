@@ -4,7 +4,7 @@ TEST_BIN_FILES = test-array test-sparse test2-sparse
 BIN_FILES = $(TEST_BIN_FILES)
 
 
-CFLAGS ?= -g -Wall
+CFLAGS ?= -g -Wall -DDEBUG=1
 
 
 all: tests tsarray.o
