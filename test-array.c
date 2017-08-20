@@ -10,15 +10,18 @@ intarray a1 = TSARRAY_INITIALIZER;
 
 int main(void)
 {
-    int count = 5;
+    int count = 15;
     int i;
+    int result;
 
     printf("Adding %d ints starting from 50\n", count);
+    printf("len: %lu, capacity: %lu\n", a1.len, a1._priv.capacity);
     for (i = 50; i < 50 + count; i++)
     {
-        int res = intarray_append(&a1, &i);
+        result = intarray_append(&a1, &i);
 
-        printf("append result: %d\n", res);
+        printf("append result: %d\n", result);
+        printf("len: %lu, capacity: %lu\n", a1.len, a1._priv.capacity);
     }
 
     puts("\nReading all used items in array");
@@ -29,7 +32,8 @@ int main(void)
     }
 
     puts("\nDeleting 3rd item");
-    intarray_remove(&a1, 2);
+    result = intarray_remove(&a1, 2);
+    printf("remove result: %d\n", result);
 
     puts("\nReading all used items in array");
     for (i = 0; i < a1.len; i++)
@@ -39,7 +43,8 @@ int main(void)
 
     puts("\nAdding 69 to the array");
     i = 69;
-    intarray_append(&a1, &i);
+    result = intarray_append(&a1, &i);
+    printf("append result: %d\n", result);
 
     puts("\nReading all used items in array");
     for (i = 0; i < a1.len; i++)
