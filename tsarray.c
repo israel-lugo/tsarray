@@ -117,6 +117,7 @@ static int tsarray_resize(struct _tsarray_abs *p_tsarray, size_t new_len,
         if (unlikely(new_items == NULL))
             return TSARRAY_ENOMEM;
 
+        p_tsarray->items = new_items;
         p_tsarray->_priv.capacity = capacity;
     }
 
