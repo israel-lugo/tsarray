@@ -104,11 +104,12 @@ static int tsarray_resize(struct _tsarray_abs *p_tsarray, size_t new_len,
     {
         assert(MIN_MARGIN <= SIZE_MAX - SIZE_MAX/MARGIN_RATIO);
         /* can never overflow, as long as the assert above is true */
-        const size_t margin = new_len/MARGIN_RATIO + MIN_MARGIN;
+        size_t margin = new_len/MARGIN_RATIO + MIN_MARGIN;
         void *new_items;
 
+        /* if the margin makes us overflow, don't use it */
         if (unlikely(!can_size_add(new_len, margin)))
-            return TSARRAY_EOVERFLOW;
+            margin = 0;
 
         capacity = new_len + margin;
 
