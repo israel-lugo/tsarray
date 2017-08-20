@@ -94,7 +94,7 @@ static int tsarray_resize(struct _tsarray_abs *p_tsarray, size_t new_len,
         return 0;
 
     /* asking for more objects than we can address? */
-    if (unlikely(new_len > SIZE_MAX/obj_size))
+    if (unlikely(!can_size_mult(new_len, obj_size)))
         return TSARRAY_ENOMEM;
 
     /* Only change capacity if new_len is outside the hysteresis range
@@ -112,8 +112,12 @@ static int tsarray_resize(struct _tsarray_abs *p_tsarray, size_t new_len,
 
         capacity = new_len + margin;
 
-        /* TODO: check that capacity < SIZE_MAX/obj_size before we
-         * multiply; reduce the margin if so */
+        /* if we overflow converting to bytes, allocate less */
+        if (unlikely(!can_size_mult(capacity, obj_size)))
+        {   /* we know SIZE_MAX fits at least new_len*obj_size */
+            capacity = SIZE_MAX/obj_size;
+            assert(capacity >= new_len);
+        }
 
         new_items = realloc(p_tsarray->items, capacity*obj_size);
 

@@ -113,6 +113,15 @@ static inline int can_size_add(const size_t x, const size_t y)
 }
 
 
+/*
+ * Check whether two size_t values can be multiplied without overflowing.
+ */
+static inline int can_size_mult(const size_t x, const size_t y)
+{
+    return x <= SIZE_MAX/y;
+}
+
+
 #endif  /* _COMMON_H */
 
 
