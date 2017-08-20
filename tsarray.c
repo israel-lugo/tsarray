@@ -112,6 +112,10 @@ static int tsarray_resize(struct _tsarray_abs *p_tsarray, size_t new_len,
             return TSARRAY_EOVERFLOW;
 
         capacity = new_len + margin;
+
+        /* TODO: check that capacity < SIZE_MAX/obj_size before we
+         * multiply; reduce the margin if so */
+
         new_items = realloc(p_tsarray->items, capacity*obj_size);
 
         if (unlikely(new_items == NULL))
