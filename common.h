@@ -40,6 +40,13 @@
 /* get INT_MIN and INT_MAX */
 #include <limits.h>
 
+/* get SIZE_MAX */
+#include <stdint.h>
+
+#if !defined(SIZE_MAX)
+#  define SIZE_MAX (~((size_t)0))
+#endif
+
 
 #if !defined(DEBUG) || !DEBUG
 #  define NDEBUG 1
@@ -97,6 +104,22 @@ static inline int can_sadd(const int x, const int y)
                   && (x >= 0 || y >= INT_MIN - x));
 }
 
+/*
+ * Check whether two size_t values can be added without overflowing.
+ */
+static inline int can_size_add(const size_t x, const size_t y)
+{   /* size_t is unsigned by definition */
+    return x <= (SIZE_MAX - y);
+}
+
+
+/*
+ * Check whether two size_t values can be multiplied without overflowing.
+ */
+static inline int can_size_mult(const size_t x, const size_t y)
+{
+    return x <= SIZE_MAX/y;
+}
 
 
 #endif  /* _COMMON_H */

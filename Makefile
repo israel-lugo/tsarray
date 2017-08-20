@@ -1,27 +1,34 @@
 
-OBJ_FILES = tsarray.o test.o test2.o
-BIN_FILES = test test2
+OBJ_FILES = tsarray.o tssparse.o test-sparse.o test2-sparse.o
+TEST_BIN_FILES = test-array test-sparse test2-sparse
+BIN_FILES = $(TEST_BIN_FILES)
 
 
-CFLAGS ?= -g -Wall
+CFLAGS ?= -g -Wall -DDEBUG=1
 
 
-all: tests
+all: tests tsarray.o
 
 
-tests: test test2
+tests: $(TEST_BIN_FILES)
 
 
-test2: test2.o tsarray.o
+test-array: test-array.o tsarray.o
 
 
-test: test.o tsarray.o
+test2-sparse: test2-sparse.o tssparse.o
+
+
+test-sparse: test-sparse.o tssparse.o
 
 
 clean:
 	rm -f $(OBJ_FILES) $(BIN_FILES)
 
+# DO NOT DELETE
 
 tsarray.o: tsarray.h common.h compiler.h
-test2.o: tsarray.h common.h compiler.h
-test.o: tsarray.h common.h compiler.h
+tssparse.o: tssparse.h common.h compiler.h
+test2-sparse.o: tssparse.h common.h compiler.h
+test-array.o: tsarray.h common.h compiler.h
+test-sparse.o: tssparse.h common.h compiler.h

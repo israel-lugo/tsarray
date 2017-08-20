@@ -23,7 +23,7 @@
 
 
 /*
- * tsarray.h - dynamic array module header
+ * tsarray.h - generic type-safe dynamic array module header
  */
 
 
@@ -57,30 +57,40 @@ enum tsarray_errno {
 };
 
 
-/* abstract versions; only for internal use (must match the subclassed
- * versions in TSARRAY_TYPEDEF) */
-struct _tsarray_abs {
-    int len;
-    int used_count;
-    int min_len;
-    struct _item_abs *items;
+/* Private metadata for the tsarray. For internal use only. */
+struct _tsarray_metadata {
+    size_t capacity;
 };
 
 
-int tsarray_add(struct _tsarray_abs *p_tsarray, const void *object,
-        size_t obj_size, size_t item_size) __attribute__((nonnull (1)));
+/* Abstract version; only for internal use (must match the subclassed
+ * versions in TSARRAY_TYPEDEF) */
+struct _tsarray_abs {
+    size_t len;
+    void *items;    /* placeholder */
+    struct _tsarray_metadata _priv;
+};
+
+
+/*
+ * TODO: We can actually hide the _priv field from the user, with some pointer
+ * magic. Create an internal-only struct _tsarray_desc with all the internal
+ * fields we want, and the last field is the publicly accessible struct
+ * _tsarray_abs (which only has user-visible fields). We'll need a constructor
+ * to create tsarrays. The constructor will internally create a _tsarray_desc,
+ * but will only return a pointer to the public struct _tsarray_abs within it.
+ * All public functions receive that pointer, it's the only thing the user
+ * ever knows. Internally, whenever we want to access the containing struct
+ * _tsarray_desc of a given struct _tsarray_abs, we use offsetof() pointer
+ * arithmetic to calculate the container address.
+ */
+
+
+int tsarray_append(struct _tsarray_abs *p_tsarray, const void *object,
+        size_t obj_size) __NON_NULL;
 
 int tsarray_remove(struct _tsarray_abs *p_tsarray, int index,
-        size_t item_size) __NON_NULL;
-
-int tsarray_compact(struct _tsarray_abs *p_tsarray, int force,
-        size_t obj_size, size_t item_size) __NON_NULL;
-
-int tsarray_truncate(struct _tsarray_abs *p_tsarray, int len,
-        size_t item_size) __NON_NULL;
-
-int tsarray_setminlen(struct _tsarray_abs *p_tsarray, int min_len,
-        size_t item_size) __NON_NULL;
+        size_t obj_size) __NON_NULL;
 
 
 /*
@@ -94,41 +104,19 @@ int tsarray_setminlen(struct _tsarray_abs *p_tsarray, int min_len,
  *      TSARRAY_TYPEDEF(intarray, int);
  */
 #define TSARRAY_TYPEDEF(arraytype, objtype) \
-    struct arraytype##_item { \
-        int used; \
-        objtype object; \
-    }; \
     typedef struct { \
-        int len; \
-        int used_count; \
-        int min_len; \
-        struct arraytype##_item *items; \
+        size_t len; \
+        objtype *items; \
+        struct _tsarray_metadata _priv; \
     } arraytype; \
-    static inline int arraytype##_add(arraytype *array, objtype *object) { \
-        return tsarray_add((struct _tsarray_abs *)array, object, \
-                            sizeof(objtype), sizeof(struct arraytype##_item)); \
+    static inline int arraytype##_append(arraytype *array, objtype *object) { \
+        return tsarray_append((struct _tsarray_abs *)array, object, \
+                sizeof(objtype)); \
     } \
-    static inline int arraytype##_remove(arraytype *array, int index) { \
+    static inline int arraytype##_remove(arraytype *array, size_t index) { \
         return tsarray_remove((struct _tsarray_abs *)array, index, \
-                               sizeof(struct arraytype##_item)); \
-    } \
-    static inline objtype *arraytype##_get_nth(arraytype *array, int index) { \
-        struct arraytype##_item *item = &array->items[index]; \
-        return likely(item->used) ? &item->object : NULL; \
-    } \
-    static inline int arraytype##_compact(arraytype *array, int force) { \
-        return tsarray_compact((struct _tsarray_abs *)array, force, \
-                                sizeof(objtype), sizeof(struct arraytype##_item)); \
-    } \
-    static inline int arraytype##_truncate(arraytype *array, int len) { \
-        return tsarray_truncate((struct _tsarray_abs *)array, len, \
-                                 sizeof(struct arraytype##_item)); \
-    } \
-    static inline int arraytype##_setminlen(arraytype *array, int len) { \
-        return tsarray_setminlen((struct _tsarray_abs *)array, len, \
-                                  sizeof(struct arraytype##_item)); \
+                sizeof(objtype)); \
     }
-
 
 
 /* Initializer for an empty tsarray. May be used directly as initializer on
@@ -137,7 +125,7 @@ int tsarray_setminlen(struct _tsarray_abs *p_tsarray, int min_len,
  * into a compound literal (by prepending the type name in parenthesis), e.g.:
  *      a1 = (intarray)TSARRAY_INITIALIZER;
  */
-#define TSARRAY_INITIALIZER { 0, 0, 0, NULL }
+#define TSARRAY_INITIALIZER { 0, NULL, { 0 } }
 
 
 #endif      /* not _TSARRAY_H */
