@@ -88,7 +88,6 @@ static int tsarray_resize(struct _tsarray_abs *p_tsarray, size_t new_len,
     size_t capacity = p_tsarray->_priv.capacity;
 
     assert(old_len <= capacity);
-    assert(p_tsarray->items != NULL || new_len == 0);
 
     /* check if there's anything to change */
     if (old_len == new_len)
