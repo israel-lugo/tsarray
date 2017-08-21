@@ -100,7 +100,7 @@ void tsarray_free(struct _tsarray_abs *p_tsarray) __NON_NULL;
  *
  * Defines (typedefs) arraytype to the new tsarray type, which will store
  * objects of type objtype. Defines type-specific functions to manipulate the
- * new array type using the prefix arraytype_*, e.g. intarray_add(), etc.
+ * new array type using the prefix arraytype_*, e.g. intarray_append(), etc.
  *
  * Example (define intarray as an array of int):
  *      TSARRAY_TYPEDEF(intarray, int);
