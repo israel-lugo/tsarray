@@ -92,6 +92,8 @@ int tsarray_append(struct _tsarray_abs *p_tsarray, const void *object,
 int tsarray_remove(struct _tsarray_abs *p_tsarray, int index,
         size_t obj_size) __NON_NULL;
 
+void tsarray_free(struct _tsarray_abs *p_tsarray) __NON_NULL;
+
 
 /*
  * Declare a new type-specific tsarray type.
@@ -116,6 +118,9 @@ int tsarray_remove(struct _tsarray_abs *p_tsarray, int index,
     static inline int arraytype##_remove(arraytype *array, size_t index) { \
         return tsarray_remove((struct _tsarray_abs *)array, index, \
                 sizeof(objtype)); \
+    } \
+    static inline void arraytype##_free(arraytype *array) { \
+        tsarray_free((struct _tsarray_abs *)array); \
     }
 
 

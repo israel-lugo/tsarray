@@ -52,5 +52,9 @@ int main(void)
         printf("a1[%d] = %d\n", i, a1.items[i]);
     }
 
+    puts("\nCleaning up array");
+    intarray_free(&a1);
+    printf("len: %lu, capacity: %lu\n", a1.len, a1._priv.capacity);
+
     return 0;
 }

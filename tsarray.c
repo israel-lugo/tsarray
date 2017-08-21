@@ -198,6 +198,32 @@ int tsarray_remove(struct _tsarray_abs *p_tsarray, int index, size_t obj_size)
 
 
 /*
+ * Free the memory occupied by a tsarray's items.
+ *
+ * This operation must be performed on a tsarray once it is no longer
+ * necessary. Failure to do so will result in memory leaks.
+ *
+ * After this operation, the tsarray will be empty, but still valid. It can
+ * be reused again by adding items to it.
+ */
+void tsarray_free(struct _tsarray_abs *p_tsarray)
+{
+    /* items == NULL if and only if capacity == 0 */
+    assert((p_tsarray->items == NULL) == (p_tsarray->_priv.capacity == 0));
+    assert(p_tsarray->len <= p_tsarray->_priv.capacity);
+
+    if (p_tsarray->items != NULL)
+    {
+        free(p_tsarray->items);
+        p_tsarray->items = NULL;
+    }
+
+    p_tsarray->len = 0;
+    p_tsarray->_priv.capacity = 0;
+}
+
+
+/*
  * Get the address of an item in a tsarray.
  *
  * Get the Nth object from a tsarray's abstract item array, given its
