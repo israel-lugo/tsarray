@@ -62,8 +62,8 @@
 static inline void *get_nth_item(const void *items, size_t index,
         size_t obj_size) __ATTR_CONST __NON_NULL;
 
-static void set_item(void *restrict items, size_t index,
-        const void *restrict object, size_t obj_size) __NON_NULL;
+static void set_items(void *items, size_t index, const void *objects,
+        size_t obj_size, size_t count);
 
 
 /*
@@ -160,7 +160,7 @@ int tsarray_append(struct _tsarray_abs *p_tsarray, const void *object,
     /* there has to be room after a resize */
     assert(p_tsarray->len <= p_tsarray->_priv.capacity);
 
-    set_item(p_tsarray->items, old_len, object, obj_size);
+    set_items(p_tsarray->items, old_len, object, obj_size, 1);
 
     return 0;
 }
@@ -238,20 +238,30 @@ static inline void *get_nth_item(const void *items, size_t index,
 
 
 /*
- * Set the contents of an item in a tsarray.
+ * Set the contents of item(s) in a tsarray.
  *
- * Receives the tsarray's abstract item array, the index of the item
- * to set, the object and its size.
+ * Receives the tsarray's abstract item array, the index of the first item
+ * to set, the array of objects, the object size, and the count of objects
+ * to set.
+ *
+ * The count is not checked for validity. It MUST be within appropriate
+ * bounds for writing to the items array (i.e. within array capacity) and
+ * for reading from the source objects array.
  *
  * The memory area holding the source object MUST NOT overlap with the
  * destination memory area.
  */
-static void set_item(void *restrict items, size_t index,
-        const void *restrict object, size_t obj_size)
+static void set_items(void *items, size_t index, const void *objects,
+        size_t obj_size, size_t count)
 {
-    void *item = get_nth_item(items, index, obj_size);
+    void *dest = get_nth_item(items, index, obj_size);
+    assert(can_size_mult(obj_size, count));
+    const size_t bytes = obj_size*count;
 
-    memcpy(item, object, obj_size);
+    /* memory ranges don't overlap */
+    assert((objects < dest && objects+bytes <= dest) || (dest < objects && dest+bytes <= objects));
+
+    memcpy(dest, objects, obj_size*count);
 }
 
 
