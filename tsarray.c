@@ -167,6 +167,49 @@ int tsarray_append(struct _tsarray_abs *p_tsarray, const void *object,
 
 
 /*
+ * Extend a tsarray by appending objects from another tsarray.
+ *
+ * Receives the destination tsarray, the source tsarray, and the object
+ * size. Appends a copy of all the objects in the source tsarray to the
+ * dest tsarray. The source tsarray is not altered in any way.
+ *
+ * The source and destination tsarrays may be the same; the tsarray will be
+ * extended with a copy of its own values.
+ *
+ * Returns zero in case of success, or a negative error value in case of
+ * error.
+ */
+int tsarray_extend(struct _tsarray_abs *p_tsarray_dest,
+        struct _tsarray_abs *p_tsarray_src, size_t obj_size)
+{
+    const size_t dest_len = p_tsarray_dest->len;
+    const size_t src_len = p_tsarray_src->len;
+    size_t new_len;
+    int retval;
+
+    if (unlikely(!can_size_add(dest_len, src_len)))
+        return TSARRAY_EOVERFLOW;
+
+    new_len = dest_len + src_len;
+
+    retval = tsarray_resize(p_tsarray_dest, new_len, obj_size);
+    if (unlikely(retval != 0))
+        return retval;
+
+    assert(p_tsarray_dest->len <= p_tsarray_dest->_priv.capacity);
+    assert(p_tsarray_dest->len == dest_len + src_len);
+
+    /* if src == dest, we can't read from src->items; dest->items may have
+     * been moved by the realloc, and we declared src as pointer-to-const,
+     * so the compiler is free to assume that src->items is never altered
+     * and reuse an old copy */
+    set_items(p_tsarray_dest->items, dest_len, p_tsarray_src->items, obj_size, src_len);
+
+    return 0;
+}
+
+
+/*
  * Remove one item from a tsarray.
  *
  * Receives a tsarray, the index of the item to remove, and the size of the

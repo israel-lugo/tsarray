@@ -89,6 +89,9 @@ struct _tsarray_abs {
 int tsarray_append(struct _tsarray_abs *p_tsarray, const void *object,
         size_t obj_size) __NON_NULL;
 
+int tsarray_extend(struct _tsarray_abs *p_tsarray_dest,
+        struct _tsarray_abs *p_tsarray_src, size_t obj_size) __NON_NULL;
+
 int tsarray_remove(struct _tsarray_abs *p_tsarray, int index,
         size_t obj_size) __NON_NULL;
 
@@ -114,6 +117,10 @@ void tsarray_free(struct _tsarray_abs *p_tsarray) __NON_NULL;
     static inline int arraytype##_append(arraytype *array, objtype *object) { \
         return tsarray_append((struct _tsarray_abs *)array, object, \
                 sizeof(objtype)); \
+    } \
+    static inline int arraytype##_extend(arraytype *dest, arraytype *src) { \
+        return tsarray_extend((struct _tsarray_abs *)dest, \
+                (struct _tsarray_abs *)src, sizeof(objtype)); \
     } \
     static inline int arraytype##_remove(arraytype *array, size_t index) { \
         return tsarray_remove((struct _tsarray_abs *)array, index, \
