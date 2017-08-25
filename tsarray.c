@@ -62,8 +62,8 @@
 static inline void *get_nth_item(const void *items, size_t index,
         size_t obj_size) __ATTR_CONST __NON_NULL;
 
-static void set_item(void *items, size_t index, const void *object,
-        size_t obj_size) __NON_NULL;
+static void set_item(void *restrict items, size_t index,
+        const void *restrict object, size_t obj_size) __NON_NULL;
 
 
 /*
@@ -242,9 +242,12 @@ static inline void *get_nth_item(const void *items, size_t index,
  *
  * Receives the tsarray's abstract item array, the index of the item
  * to set, the object and its size.
+ *
+ * The memory area holding the source object MUST NOT overlap with the
+ * destination memory area.
  */
-static void set_item(void *items, size_t index, const void *object,
-        size_t obj_size)
+static void set_item(void *restrict items, size_t index,
+        const void *restrict object, size_t obj_size)
 {
     void *item = get_nth_item(items, index, obj_size);
 
