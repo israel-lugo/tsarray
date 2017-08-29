@@ -4,7 +4,6 @@
 AC_PREREQ([2.69])
 AC_INIT([libtsarray], [0.1.0], [israel.lugo@lugosys.com])
 AC_CONFIG_SRCDIR([src/tsarray.c])
-AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
 # Checks for programs.
@@ -33,5 +32,8 @@ AC_TYPE_SIZE_T
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([memmove])
 
+# Output files
+AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile src/Makefile])
+
 AC_OUTPUT
