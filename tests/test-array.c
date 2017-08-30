@@ -9,6 +9,23 @@ intarray a1 = TSARRAY_INITIALIZER;
 intarray a2 = TSARRAY_INITIALIZER;
 
 
+static void _print_array(const intarray *a, const char *name)
+{
+    int i;
+
+    for (i=0; i < a->len; i++)
+        printf("%s[%d] = %d\n", name, i, a->items[i]);
+}
+
+static void _print_array_stats(const intarray *a, const char *name)
+{
+    printf("%s- len: %lu, capacity: %lu\n", name, a->len, a->_priv.capacity);
+}
+
+#define print_array(a) _print_array(&a, #a)
+#define print_array_stats(a) _print_array_stats(&a, #a)
+
+
 int main(void)
 {
     int count = 15;
@@ -16,31 +33,25 @@ int main(void)
     int result;
 
     printf("a1- Adding %d ints starting from 50\n", count);
-    printf("a1- len: %lu, capacity: %lu\n", a1.len, a1._priv.capacity);
+    print_array_stats(a1);
     for (i = 50; i < 50 + count; i++)
     {
         result = intarray_append(&a1, &i);
 
         printf("append result: %d\n", result);
-        printf("a1- len: %lu, capacity: %lu\n", a1.len, a1._priv.capacity);
+        print_array_stats(a1);
     }
 
     puts("\na1- Reading all items in array");
 
-    for (i = 0; i < a1.len; i++)
-    {
-        printf("a1[%d] = %d\n", i, a1.items[i]);
-    }
+    print_array(a1);
 
     puts("\na1- Deleting 3rd item");
     result = intarray_remove(&a1, 2);
     printf("remove result: %d\n", result);
 
     puts("\na1- Reading all items in array");
-    for (i = 0; i < a1.len; i++)
-    {
-        printf("a1[%d] = %d\n", i, a1.items[i]);
-    }
+    print_array(a1);
 
     puts("\na1- Adding 69 to the array");
     i = 69;
@@ -48,60 +59,48 @@ int main(void)
     printf("append result: %d\n", result);
 
     puts("\na1- Reading all used items in array");
-    for (i = 0; i < a1.len; i++)
-    {
-        printf("a1[%d] = %d\n", i, a1.items[i]);
-    }
+    print_array(a1);
 
     puts("\na2- Extending from a1");
     result = intarray_extend(&a2, &a1);
     printf("extend result: %d\n", result);
-    printf("a2- len: %lu, capacity: %lu\n", a2.len, a2._priv.capacity);
+    print_array_stats(a2);
 
     puts("\na2- Reading all items in array");
-    for (i = 0; i < a2.len; i++)
-    {
-        printf("a2[%d] = %d\n", i, a2.items[i]);
-    }
+    print_array(a2);
 
     puts("\na1- Cleaning up array");
     intarray_free(&a1);
-    printf("len: %lu, capacity: %lu\n", a1.len, a1._priv.capacity);
+    print_array_stats(a1);
 
     puts("\na1- Appending 77 and 88");
     i = 77;
     result = intarray_append(&a1, &i);
     printf("append result: %d\n", result);
-    printf("a1- len: %lu, capacity: %lu\n", a1.len, a1._priv.capacity);
+    print_array_stats(a1);
     i = 88;
     result = intarray_append(&a1, &i);
     printf("append result: %d\n", result);
-    printf("a1- len: %lu, capacity: %lu\n", a1.len, a1._priv.capacity);
+    print_array_stats(a1);
 
     puts("\na1- Extending from itself, twice");
     result = intarray_extend(&a1, &a1);
     printf("extend result: %d\n", result);
-    printf("a1- len: %lu, capacity: %lu\n", a1.len, a1._priv.capacity);
+    print_array_stats(a1);
     result = intarray_extend(&a1, &a1);
     printf("extend result: %d\n", result);
-    printf("a1- len: %lu, capacity: %lu\n", a1.len, a1._priv.capacity);
+    print_array_stats(a1);
 
     puts("\na1- Reading all items in array");
-    for (i = 0; i < a1.len; i++)
-    {
-        printf("a1[%d] = %d\n", i, a1.items[i]);
-    }
+    print_array(a1);
 
     puts("\na2- Extending from a1");
     result = intarray_extend(&a2, &a1);
     printf("extend result: %d\n", result);
-    printf("a2- len: %lu, capacity: %lu\n", a2.len, a2._priv.capacity);
+    print_array_stats(a2);
 
     puts("\na2- Reading all items in array");
-    for (i = 0; i < a2.len; i++)
-    {
-        printf("a2[%d] = %d\n", i, a2.items[i]);
-    }
+    print_array(a2);
 
     return 0;
 }
