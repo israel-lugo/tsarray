@@ -21,6 +21,10 @@ AM_INIT_AUTOMAKE([foreign])
 
 # Checks for libraries.
 
+# Use pkg-config to look for check unit testing library. This sets CHECK_CFLAGS
+# and CHECK_LIBS appropriately.
+PKG_CHECK_MODULES([CHECK], [check])
+
 # Checks for header files.
 AC_CHECK_HEADERS([limits.h stddef.h stdint.h stdlib.h string.h])
 
