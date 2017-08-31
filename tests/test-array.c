@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include "tsarray.h"
+#include <tsarray.h>
 
 TSARRAY_TYPEDEF(intarray, int);
 

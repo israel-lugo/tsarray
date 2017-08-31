@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include "tssparse.h"
+#include <tssparse.h>
 
 TSSPARSE_TYPEDEF(intarray, int);
 
