@@ -39,8 +39,8 @@ START_TEST(test_create_and_free)
 {
     intarray a1 = TSARRAY_INITIALIZER;
 
-    ck_assert(a1.len == 0);
-    ck_assert(a1._priv.capacity >= 0);
+    ck_assert_uint_eq(a1.len, 0);
+    ck_assert_uint_ge(a1._priv.capacity, 0);
     ck_assert((a1.items == NULL) == (a1._priv.capacity == 0));
 
     intarray_free(&a1);
