@@ -74,3 +74,6 @@ Makefile.in
 /test-driver
 /tests/*.log
 /tests/*.trs
+
+# Vim swap file
+.*.swp
