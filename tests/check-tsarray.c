@@ -47,6 +47,39 @@ START_TEST(test_create_and_free)
 }
 END_TEST
 
+START_TEST(test_append)
+{
+    intarray a1 = TSARRAY_INITIALIZER;
+    int i = 5;
+    int append_result;
+
+    append_result = intarray_append(&a1, &i);
+    ck_assert_int_eq(append_result, 0);
+
+    ck_assert_uint_eq(a1.len, 1);
+    ck_assert_int_eq(a1.items[0], i);
+
+    intarray_free(&a1);
+}
+END_TEST
+
+START_TEST(test_remove)
+{
+    intarray a1 = TSARRAY_INITIALIZER;
+    int i = 5;
+    int append_result, remove_result;
+
+    append_result = intarray_append(&a1, &i);
+    ck_assert_int_eq(append_result, 0);
+
+    remove_result = intarray_remove(&a1, 0);
+    ck_assert_int_eq(remove_result, 0);
+
+    ck_assert_uint_eq(a1.len, 0);
+
+    intarray_free(&a1);
+}
+END_TEST
 
 
 Suite *foo_suite(void)
@@ -59,6 +92,8 @@ Suite *foo_suite(void)
     tc = tcase_create("core");
 
     tcase_add_test(tc, test_create_and_free);
+    tcase_add_test(tc, test_append);
+    tcase_add_test(tc, test_remove);
     suite_add_tcase(s, tc);
 
     return s;
