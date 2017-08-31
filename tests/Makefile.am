@@ -10,5 +10,7 @@ AM_CFLAGS = -I$(top_srcdir)/src
 libs_path = $(top_builddir)/src/.libs
 
 test_array_LDADD = $(libs_path)/libtsarray.la
+test_array_SOURCES = test-array.c $(top_builddir)/src/tsarray.h
+test_sparse_SOURCES = test-sparse.c $(top_builddir)/src/tssparse.h
 test_sparse_LDADD = $(libs_path)/libtssparse.la
 
