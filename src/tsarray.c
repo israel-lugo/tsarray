@@ -67,6 +67,27 @@ static void set_items(void *items, size_t index, const void *objects,
 
 
 /*
+ * Create a new, empty, tsarray.
+ *
+ * Returns a pointer to the newly created tsarray, or NULL in case of error
+ * while allocating memory.
+ */
+struct _tsarray_abs *tsarray_new(void)
+{
+    struct _tsarray_abs *new = malloc(sizeof(struct _tsarray_abs));
+
+    if (unlikely(new == NULL))
+        return NULL;
+
+    new->len = 0;
+    new->items = NULL;
+    new->_priv.capacity = 0;
+
+    return new;
+}
+
+
+/*
  * Sets a tsarray's length, adjusting its capacity if necessary.
  *
  * Receives the tsarray, the new length, and the object size. Sets the

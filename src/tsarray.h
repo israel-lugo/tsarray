@@ -86,6 +86,8 @@ struct _tsarray_abs {
  */
 
 
+struct _tsarray_abs *tsarray_new(void) __ATTR_MALLOC;
+
 int tsarray_append(struct _tsarray_abs *p_tsarray, const void *object,
         size_t obj_size) __NON_NULL;
 
@@ -114,6 +116,9 @@ void tsarray_free(struct _tsarray_abs *p_tsarray) __NON_NULL;
         objtype *items; \
         struct _tsarray_metadata _priv; \
     } arraytype; \
+    static inline arraytype *arraytype##_new(void) { \
+        return (arraytype *)tsarray_new(); \
+    } \
     static inline int arraytype##_append(arraytype *array, objtype *object) { \
         return tsarray_append((struct _tsarray_abs *)array, object, \
                 sizeof(objtype)); \

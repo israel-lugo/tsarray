@@ -33,51 +33,72 @@
 
 TSARRAY_TYPEDEF(intarray, int);
 
+intarray *a1 = NULL;
+
+/*
+ * Create a new intarray and make a1 point to it.
+ *
+ * To be used as the setup for a checked test fixture.
+ */
+void new_array(void)
+{
+    a1 = intarray_new();
+    ck_assert_ptr_ne(a1, NULL);
+}
+
+
+/*
+ * Free the a1 intarray.
+ *
+ * To be used as the teardown for a checked test fixture.
+ */
+void del_array(void)
+{
+    ck_assert_int_eq((a1->items == NULL), (a1->_priv.capacity == 0));
+    intarray_free(a1);
+}
 
 
 START_TEST(test_create_and_free)
 {
-    intarray a1 = TSARRAY_INITIALIZER;
-
-    ck_assert_uint_eq(a1.len, 0);
-    ck_assert_uint_ge(a1._priv.capacity, 0);
-    ck_assert_int_eq((a1.items == NULL), (a1._priv.capacity == 0));
-
-    intarray_free(&a1);
+    ck_assert_uint_eq(a1->len, 0);
+    ck_assert_uint_ge(a1->_priv.capacity, 0);
 }
 END_TEST
 
 START_TEST(test_append)
 {
-    intarray a1 = TSARRAY_INITIALIZER;
     int i = 5;
     int append_result;
 
-    append_result = intarray_append(&a1, &i);
+    append_result = intarray_append(a1, &i);
     ck_assert_int_eq(append_result, 0);
 
-    ck_assert_uint_eq(a1.len, 1);
-    ck_assert_int_eq(a1.items[0], i);
-
-    intarray_free(&a1);
+    ck_assert_uint_eq(a1->len, 1);
+    ck_assert_int_eq(a1->items[0], i);
 }
 END_TEST
 
 START_TEST(test_remove)
 {
-    intarray a1 = TSARRAY_INITIALIZER;
     int i = 5;
     int append_result, remove_result;
 
-    append_result = intarray_append(&a1, &i);
+    append_result = intarray_append(a1, &i);
     ck_assert_int_eq(append_result, 0);
 
-    remove_result = intarray_remove(&a1, 0);
+    remove_result = intarray_remove(a1, 0);
     ck_assert_int_eq(remove_result, 0);
 
-    ck_assert_uint_eq(a1.len, 0);
+    ck_assert_uint_eq(a1->len, 0);
+}
+END_TEST
 
-    intarray_free(&a1);
+
+START_TEST(test_tsarray_size)
+{
+    /* tsarray_new() assumes this much */
+    ck_assert_uint_eq(sizeof(intarray), sizeof(struct _tsarray_abs));
 }
 END_TEST
 
@@ -85,16 +106,23 @@ END_TEST
 Suite *foo_suite(void)
 {
     Suite *s;
-    TCase *tc;
+    TCase *tc_memsizes;
+    TCase *tc_ops;
 
     s = suite_create("tsarray");
 
-    tc = tcase_create("core");
+    tc_memsizes = tcase_create("memsizes");
+    tc_ops = tcase_create("operations");
 
-    tcase_add_test(tc, test_create_and_free);
-    tcase_add_test(tc, test_append);
-    tcase_add_test(tc, test_remove);
-    suite_add_tcase(s, tc);
+    tcase_add_test(tc_memsizes, test_tsarray_size);
+
+    tcase_add_checked_fixture(tc_ops, new_array, del_array);
+    tcase_add_test(tc_ops, test_create_and_free);
+    tcase_add_test(tc_ops, test_append);
+    tcase_add_test(tc_ops, test_remove);
+
+    suite_add_tcase(s, tc_memsizes);
+    suite_add_tcase(s, tc_ops);
 
     return s;
 }
