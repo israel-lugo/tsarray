@@ -40,6 +40,27 @@ intarray *a1 = NULL;
 
 
 /*
+ * Append a range of ints to the specified intarray.
+ *
+ * Appends a sequence of ints from start (inclusive) to stop (exclusive) to
+ * the specified intarray.
+ *
+ * Useful to fill arrays with junk inside unit tests. Checks the result;
+ * will fail the test if intarray_append returns an error.
+ */
+static void append_seq_checked(intarray *a, int start, int stop)
+{
+    int i;
+
+    for (i=start; i<stop; i++)
+    {
+        int append_result = intarray_append(a, &i);
+        ck_assert_int_eq(append_result, 0);
+    }
+}
+
+
+/*
  * Create a new intarray and make a1 point to it.
  *
  * To be used as the setup for a checked test fixture.
@@ -96,14 +117,12 @@ END_TEST
  */
 START_TEST(test_append)
 {
-    int i = 5;
-    int append_result;
+    const int value = 10;
 
-    append_result = intarray_append(a1, &i);
-    ck_assert_int_eq(append_result, 0);
+    append_seq_checked(a1, value, value+1);
 
     ck_assert_uint_eq(a1->len, 1);
-    ck_assert_int_eq(a1->items[0], i);
+    ck_assert_int_eq(a1->items[0], value);
 }
 END_TEST
 
@@ -137,11 +156,9 @@ END_TEST
  */
 START_TEST(test_remove)
 {
-    int i = 5;
-    int append_result, remove_result;
+    int remove_result;
 
-    append_result = intarray_append(a1, &i);
-    ck_assert_int_eq(append_result, 0);
+    append_seq_checked(a1, 10, 11);
 
     remove_result = intarray_remove(a1, 0);
     ck_assert_int_eq(remove_result, 0);
@@ -169,18 +186,14 @@ END_TEST
  */
 START_TEST(test_remove_noent)
 {
-    int i = 5;
-    int append_result, remove_result;
+    int remove_result;
 
-    append_result = intarray_append(a1, &i);
-    ck_assert_int_eq(append_result, 0);
+    append_seq_checked(a1, 10, 11);
 
     remove_result = intarray_remove(a1, 1);
     ck_assert_int_eq(remove_result, TSARRAY_ENOENT);
 }
 END_TEST
-
-
 
 
 Suite *foo_suite(void)
