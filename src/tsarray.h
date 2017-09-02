@@ -136,15 +136,6 @@ void tsarray_free(struct _tsarray_abs *p_tsarray) __NON_NULL;
     }
 
 
-/* Initializer for an empty tsarray. May be used directly as initializer on
- * a declaration, or as rvalue on an assignment expression (for an already
- * declared identifier). In the latter case, this must be must be transformed
- * into a compound literal (by prepending the type name in parenthesis), e.g.:
- *      a1 = (intarray)TSARRAY_INITIALIZER;
- */
-#define TSARRAY_INITIALIZER { 0, NULL, { 0 } }
-
-
 #endif      /* not _TSARRAY_H */
 
 
