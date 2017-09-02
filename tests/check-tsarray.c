@@ -40,13 +40,13 @@ intarray *a1 = NULL;
 
 
 /*
- * Append a range of ints to the specified intarray.
+ * Append a sequence of ints to the specified intarray and perform checks.
  *
- * Appends a sequence of ints from start (inclusive) to stop (exclusive) to
- * the specified intarray.
+ * The sequence of ints ranges from start (inclusive) to stop (exclusive).
  *
- * Useful to fill arrays with junk inside unit tests. Checks the result;
- * will fail the test if intarray_append returns an error.
+ * Useful to fill arrays with junk inside unit tests. Checks the result,
+ * length, capacity, and that the correct item was appended. Will fail the
+ * test if any of these checks fail.
  */
 static void append_seq_checked(intarray *a, int start, int stop)
 {
@@ -54,8 +54,13 @@ static void append_seq_checked(intarray *a, int start, int stop)
 
     for (i=start; i<stop; i++)
     {
+        const size_t old_len = a->len;
         int append_result = intarray_append(a, &i);
         ck_assert_int_eq(append_result, 0);
+
+        ck_assert_uint_eq(a->len, old_len+1);
+        ck_assert_uint_ge(a->_priv.capacity, a->len);
+        ck_assert_int_eq(a->items[old_len], i);
     }
 }
 
@@ -117,13 +122,7 @@ END_TEST
  */
 START_TEST(test_append_one)
 {
-    const int value = 10;
-
-    append_seq_checked(a1, value, value+1);
-
-    ck_assert_uint_eq(a1->len, 1);
-    ck_assert_uint_ge(a1->_priv.capacity, a1->len);
-    ck_assert_int_eq(a1->items[0], value);
+    append_seq_checked(a1, 10, 11);
 }
 END_TEST
 
@@ -141,9 +140,6 @@ START_TEST(test_append_many)
     int i;
 
     append_seq_checked(a1, start, stop);
-
-    ck_assert_uint_eq(a1->len, expected_len);
-    ck_assert_uint_ge(a1->_priv.capacity, a1->len);
 
     for (i=0; i<expected_len; i++)
     {
