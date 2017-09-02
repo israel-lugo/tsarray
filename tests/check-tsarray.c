@@ -157,6 +157,7 @@ START_TEST(test_append_overflow)
 {
     const size_t old_capacity = a1->_priv.capacity;
     const size_t old_len = a1->len;
+    int *const old_items = a1->items;
     int i = 5;
     int append_result;
 
@@ -166,6 +167,11 @@ START_TEST(test_append_overflow)
 
     append_result = intarray_append(a1, &i);
     ck_assert_int_eq(append_result, TSARRAY_EOVERFLOW);
+
+    /* make sure append didn't change anything */
+    ck_assert_uint_eq(a1->_priv.capacity, SIZE_MAX);
+    ck_assert_uint_eq(a1->len, SIZE_MAX);
+    ck_assert_ptr_eq(a1->items, old_items);
 
     /* undo the cheating, destructor may need the real values */
     a1->_priv.capacity = old_capacity;
