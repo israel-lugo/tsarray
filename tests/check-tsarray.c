@@ -122,6 +122,7 @@ START_TEST(test_append_one)
     append_seq_checked(a1, value, value+1);
 
     ck_assert_uint_eq(a1->len, 1);
+    ck_assert_uint_ge(a1->_priv.capacity, a1->len);
     ck_assert_int_eq(a1->items[0], value);
 }
 END_TEST
@@ -136,13 +137,15 @@ START_TEST(test_append_many)
 {
     const int start = -1010;
     const int stop = 32010;
+    const size_t expected_len = stop-start;
     int i;
 
     append_seq_checked(a1, start, stop);
 
-    ck_assert_uint_eq(a1->len, stop-start);
+    ck_assert_uint_eq(a1->len, expected_len);
+    ck_assert_uint_ge(a1->_priv.capacity, a1->len);
 
-    for (i=0; i < stop-start; i++)
+    for (i=0; i<expected_len; i++)
     {
         const int value = i + start;
         ck_assert_int_eq(a1->items[i], value);
@@ -201,6 +204,7 @@ START_TEST(test_remove_empty)
 
     remove_result = intarray_remove(a1, 0);
     ck_assert_int_eq(remove_result, TSARRAY_ENOENT);
+    ck_assert_int_eq(a1->len, 0);
 }
 END_TEST
 
@@ -210,12 +214,18 @@ END_TEST
  */
 START_TEST(test_remove_noent)
 {
+    const int value = 10;
     int remove_result;
 
-    append_seq_checked(a1, 10, 11);
+    append_seq_checked(a1, value, value+1);
 
     remove_result = intarray_remove(a1, 1);
     ck_assert_int_eq(remove_result, TSARRAY_ENOENT);
+
+    /* make sure the existing item is still there */
+    ck_assert_int_eq(a1->len, 1);
+    ck_assert_uint_ge(a1->_priv.capacity, a1->len);
+    ck_assert_int_eq(a1->items[0], value);
 }
 END_TEST
 
