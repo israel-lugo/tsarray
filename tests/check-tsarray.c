@@ -151,6 +151,38 @@ START_TEST(test_remove)
 END_TEST
 
 
+/*
+ * Test trying to remove from an empty tsarray.
+ */
+START_TEST(test_remove_empty)
+{
+    int remove_result;
+
+    remove_result = intarray_remove(a1, 0);
+    ck_assert_int_eq(remove_result, TSARRAY_ENOENT);
+}
+END_TEST
+
+
+/*
+ * Test trying to remove non-existent item from non-empty tsarray.
+ */
+START_TEST(test_remove_noent)
+{
+    int i = 5;
+    int append_result, remove_result;
+
+    append_result = intarray_append(a1, &i);
+    ck_assert_int_eq(append_result, 0);
+
+    remove_result = intarray_remove(a1, 1);
+    ck_assert_int_eq(remove_result, TSARRAY_ENOENT);
+}
+END_TEST
+
+
+
+
 Suite *foo_suite(void)
 {
     Suite *s;
@@ -169,6 +201,8 @@ Suite *foo_suite(void)
     tcase_add_test(tc_ops, test_append);
     tcase_add_test(tc_ops, test_append_overflow);
     tcase_add_test(tc_ops, test_remove);
+    tcase_add_test(tc_ops, test_remove_empty);
+    tcase_add_test(tc_ops, test_remove_noent);
 
     suite_add_tcase(s, tc_memsizes);
     suite_add_tcase(s, tc_ops);
