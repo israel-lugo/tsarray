@@ -230,6 +230,44 @@ START_TEST(test_remove_noent)
 END_TEST
 
 
+/*
+ * Test removing many items from a tsarray.
+ *
+ * Append enough items to force resizing, then remove them again to check
+ * for shrinking.
+ */
+START_TEST(test_remove_many)
+{
+    const int start = -1010;
+    const int stop = 32010;
+    const size_t full_len = stop-start;
+    const size_t len_after_remove = 10;
+    const size_t remove_count = full_len - len_after_remove;
+    size_t full_capacity;
+    int remove_result;
+    int i;
+
+    /* fill the array */
+    append_seq_checked(a1, start, stop);
+    ck_assert_uint_eq(a1->len, full_len);
+    ck_assert_uint_ge(a1->_priv.capacity, a1->len);
+
+    full_capacity = a1->_priv.capacity;
+
+    for (i=0; i<remove_count; i++)
+    {
+        remove_result = intarray_remove(a1, 0);
+        ck_assert_int_eq(remove_result, 0);
+    }
+
+    /* make sure len is correct, and array was shrunk */
+    ck_assert_uint_eq(a1->len, len_after_remove);
+    ck_assert_uint_lt(a1->_priv.capacity, full_capacity);
+    ck_assert_uint_ge(a1->_priv.capacity, a1->len);
+}
+END_TEST
+
+
 Suite *foo_suite(void)
 {
     Suite *s;
@@ -251,6 +289,7 @@ Suite *foo_suite(void)
     tcase_add_test(tc_ops, test_remove);
     tcase_add_test(tc_ops, test_remove_empty);
     tcase_add_test(tc_ops, test_remove_noent);
+    tcase_add_test(tc_ops, test_remove_many);
 
     suite_add_tcase(s, tc_memsizes);
     suite_add_tcase(s, tc_ops);
