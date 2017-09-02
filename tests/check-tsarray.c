@@ -35,6 +35,7 @@ TSARRAY_TYPEDEF(intarray, int);
 
 intarray *a1 = NULL;
 
+
 /*
  * Create a new intarray and make a1 point to it.
  *
@@ -59,6 +60,26 @@ void del_array(void)
 }
 
 
+/*
+ * Make sure abstract tsarray is the same size as a type-specific "subclass".
+ *
+ * We rely on this for the constructor, and elsewhere.
+ *
+ * This is tested in a test case of its own, without the test fixture that
+ * initializes an empty tsarray. The whole point is to catch any potential
+ * problems before the constructor hits them.
+ */
+START_TEST(test_tsarray_size)
+{
+    /* tsarray_new() assumes this much */
+    ck_assert_uint_eq(sizeof(intarray), sizeof(struct _tsarray_abs));
+}
+END_TEST
+
+
+/*
+ * Test creating and destroying a tsarray.
+ */
 START_TEST(test_create_and_free)
 {
     ck_assert_uint_eq(a1->len, 0);
@@ -66,6 +87,10 @@ START_TEST(test_create_and_free)
 }
 END_TEST
 
+
+/*
+ * Test appending an element to an empty tsarray.
+ */
 START_TEST(test_append)
 {
     int i = 5;
@@ -79,6 +104,10 @@ START_TEST(test_append)
 }
 END_TEST
 
+
+/*
+ * Test removing an element from an array.
+ */
 START_TEST(test_remove)
 {
     int i = 5;
@@ -91,14 +120,6 @@ START_TEST(test_remove)
     ck_assert_int_eq(remove_result, 0);
 
     ck_assert_uint_eq(a1->len, 0);
-}
-END_TEST
-
-
-START_TEST(test_tsarray_size)
-{
-    /* tsarray_new() assumes this much */
-    ck_assert_uint_eq(sizeof(intarray), sizeof(struct _tsarray_abs));
 }
 END_TEST
 
