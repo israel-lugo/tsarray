@@ -28,6 +28,9 @@
 #include <stdlib.h>
 #include <check.h>
 
+/* get SIZE_MAX */
+#include <stdint.h>
+
 #include <tsarray.h>
 
 
@@ -106,6 +109,30 @@ END_TEST
 
 
 /*
+ * Test that tsarray_append detects overflow.
+ */
+START_TEST(test_append_overflow)
+{
+    const size_t old_capacity = a1->_priv.capacity;
+    const size_t old_len = a1->len;
+    int i = 5;
+    int append_result;
+
+    /* we cheat by messing with the internal structure, to avoid having to
+     * actually append millions of objects */
+    a1->len = a1->_priv.capacity = SIZE_MAX;
+
+    append_result = intarray_append(a1, &i);
+    ck_assert_int_eq(append_result, TSARRAY_EOVERFLOW);
+
+    /* undo the cheating, destructor may need the real values */
+    a1->_priv.capacity = old_capacity;
+    a1->len = old_len;
+}
+END_TEST
+
+
+/*
  * Test removing an element from an array.
  */
 START_TEST(test_remove)
@@ -140,6 +167,7 @@ Suite *foo_suite(void)
     tcase_add_checked_fixture(tc_ops, new_array, del_array);
     tcase_add_test(tc_ops, test_create_and_free);
     tcase_add_test(tc_ops, test_append);
+    tcase_add_test(tc_ops, test_append_overflow);
     tcase_add_test(tc_ops, test_remove);
 
     suite_add_tcase(s, tc_memsizes);
