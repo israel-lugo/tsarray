@@ -115,7 +115,7 @@ END_TEST
 /*
  * Test appending an element to an empty tsarray.
  */
-START_TEST(test_append)
+START_TEST(test_append_one)
 {
     const int value = 10;
 
@@ -123,6 +123,30 @@ START_TEST(test_append)
 
     ck_assert_uint_eq(a1->len, 1);
     ck_assert_int_eq(a1->items[0], value);
+}
+END_TEST
+
+
+/*
+ * Test appending many items.
+ *
+ * Appends enough items to force array resizing.
+ */
+START_TEST(test_append_many)
+{
+    const int start = -1010;
+    const int stop = 32010;
+    int i;
+
+    append_seq_checked(a1, start, stop);
+
+    ck_assert_uint_eq(a1->len, stop-start);
+
+    for (i=0; i < stop-start; i++)
+    {
+        const int value = i + start;
+        ck_assert_int_eq(a1->items[i], value);
+    }
 }
 END_TEST
 
@@ -211,7 +235,8 @@ Suite *foo_suite(void)
 
     tcase_add_checked_fixture(tc_ops, new_array, del_array);
     tcase_add_test(tc_ops, test_create_and_free);
-    tcase_add_test(tc_ops, test_append);
+    tcase_add_test(tc_ops, test_append_one);
+    tcase_add_test(tc_ops, test_append_many);
     tcase_add_test(tc_ops, test_append_overflow);
     tcase_add_test(tc_ops, test_remove);
     tcase_add_test(tc_ops, test_remove_empty);
