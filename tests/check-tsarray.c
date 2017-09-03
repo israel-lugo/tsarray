@@ -299,6 +299,42 @@ START_TEST(test_remove_many)
 END_TEST
 
 
+START_TEST(test_extend)
+{
+    intarray *a2 = intarray_new();
+    const int a1stop = 10;
+    const int a2stop = 60;
+    int *a2_items;
+    int extend_result;
+    int i;
+
+    ck_assert_ptr_ne(a2, NULL);
+
+    /* a1 = [0..a1stop); a2 = [a1stop..a2stop) */
+    append_seq_checked(a1, 0, a1stop);
+    append_seq_checked(a2, a1stop, a2stop);
+    a2_items = a2->items;
+
+    extend_result = intarray_extend(a1, a2);
+    ck_assert_int_eq(extend_result, 0);
+
+    /* check a2 wasn't changed and free it */
+    ck_assert_uint_eq(a2->len, a2stop-a1stop);
+    ck_assert_ptr_eq(a2->items, a2_items);
+    for (i=0; i<a2stop-a1stop; i++)
+        ck_assert_int_eq(a2->items[i], i+a1stop);
+    intarray_free(a2);
+
+    /* check a1 was extended with the contents of a2 */
+    ck_assert_uint_eq(a1->len, a2stop);
+    ck_assert_uint_ge(a1->_priv.capacity, a1->len);
+
+    for (i=0; i<a2stop; i++)
+        ck_assert_int_eq(a1->items[i], i);
+}
+END_TEST
+
+
 Suite *foo_suite(void)
 {
     Suite *s;
@@ -322,6 +358,7 @@ Suite *foo_suite(void)
     tcase_add_test(tc_ops, test_remove_noent);
     tcase_add_test(tc_ops, test_remove_middle);
     tcase_add_test(tc_ops, test_remove_many);
+    tcase_add_test(tc_ops, test_extend);
 
     suite_add_tcase(s, tc_memsizes);
     suite_add_tcase(s, tc_ops);
