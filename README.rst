@@ -58,37 +58,37 @@ Example
 .. code:: c
 
     #include <stdio.h>
-    #include "tsarray.h"
+    #include <tsarray.h>
 
     /* declare a new typedef called intarray, for a tsarray of int */
     TSARRAY_TYPEDEF(intarray, int);
 
     void f(int a, int b) {
-        intarray a1 = TSARRAY_INITIALIZER;
+        intarray *a1 = intarray_new();
 
-        intarray_append(&a1, &a);
-        intarray_append(&a1, &b);
+        intarray_append(a1, &a);
+        intarray_append(a1, &b);
 
-        printf("a1.len: %lu\n", a1.len);
-        printf("a1[0]: %d\n", a1.items[0]);
-        printf("a1[1]: %d\n", a1.items[1]);
+        printf("a1->len: %lu\n", a1->len);
+        printf("a1[0]: %d\n", a1->items[0]);
+        printf("a1[1]: %d\n", a1->items[1]);
 
         puts("Removing a[0]...");
-        intarray_remove(&a1, 0);
+        intarray_remove(a1, 0);
 
-        printf("a1.len: %lu\n", a1.len);
-        printf("a1[0]: %d\n", a1.items[0]);
+        printf("a1->len: %lu\n", a1->len);
+        printf("a1[0]: %d\n", a1->items[0]);
 
-        intarray_free(&a1);
+        intarray_free(a1);
     }
 
 Given the above code, calling ``f(31, 42)`` would produce the following output::
 
-  a1.len: 2
+  a1->len: 2
   a1[0]: 31
   a1[1]: 42
   Removing a[0]...
-  a1.len: 1
+  a1->len: 1
   a1[0]: 42
 
 
