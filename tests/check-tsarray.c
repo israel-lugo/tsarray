@@ -233,6 +233,35 @@ END_TEST
 
 
 /*
+ * Test removing an item from the middle of a tsarray.
+ *
+ * The remaining items must still be there, in the correct order.
+ */
+START_TEST(test_remove_middle)
+{
+    const int stop = 20;
+    const int remove_idx = stop/2;
+    int remove_result;
+    int i;
+
+    append_seq_checked(a1, 0, stop);
+
+    remove_result = intarray_remove(a1, remove_idx);
+    ck_assert_int_eq(remove_result, 0);
+
+    ck_assert_uint_eq(a1->len, stop-1);
+    ck_assert_uint_ge(a1->_priv.capacity, a1->len);
+
+    /* check that all remaining items are there, in right order */
+    for (i=0; i<remove_idx; i++)
+        ck_assert_int_eq(a1->items[i], i);
+    for (i=remove_idx; i < stop-1; i++)
+        ck_assert_int_eq(a1->items[i], i+1);
+}
+END_TEST
+
+
+/*
  * Test removing many items from a tsarray.
  *
  * Append enough items to force resizing, then remove them again to check
@@ -291,6 +320,7 @@ Suite *foo_suite(void)
     tcase_add_test(tc_ops, test_remove);
     tcase_add_test(tc_ops, test_remove_empty);
     tcase_add_test(tc_ops, test_remove_noent);
+    tcase_add_test(tc_ops, test_remove_middle);
     tcase_add_test(tc_ops, test_remove_many);
 
     suite_add_tcase(s, tc_memsizes);
