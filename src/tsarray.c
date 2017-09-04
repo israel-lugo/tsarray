@@ -219,6 +219,7 @@ int tsarray_extend(struct _tsarray_abs *p_tsarray_dest,
 
     assert(p_tsarray_dest->len <= p_tsarray_dest->_priv.capacity);
     assert(p_tsarray_dest->len == dest_len + src_len);
+    assert(p_tsarray_dest->items != NULL);
 
     /* if src == dest, we can't read from src->items; dest->items may have
      * been moved by the realloc, and we declared src as pointer-to-const,
