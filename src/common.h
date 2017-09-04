@@ -118,7 +118,8 @@ static inline int can_size_add(const size_t x, const size_t y)
  */
 static inline int can_size_mult(const size_t x, const size_t y)
 {
-    return x <= SIZE_MAX/y;
+    /* avoid division by zero, and trivial case where y==1 */
+    return (y <= 1) || (x <= SIZE_MAX/y);
 }
 
 
