@@ -318,7 +318,7 @@ START_TEST(test_extend)
     extend_result = intarray_extend(a1, a2);
     ck_assert_int_eq(extend_result, 0);
 
-    /* check a2 wasn't changed and free it */
+    /* check a2 wasn't changed, then free it */
     ck_assert_uint_eq(a2->len, a2stop-a1stop);
     ck_assert_ptr_eq(a2->items, a2_items);
     for (i=0; i<a2stop-a1stop; i++)
