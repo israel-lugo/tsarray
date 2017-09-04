@@ -375,7 +375,7 @@ START_TEST(test_extend_empty)
 END_TEST
 
 
-Suite *foo_suite(void)
+Suite *tsarray_suite(void)
 {
     Suite *s;
     TCase *tc_memsizes;
@@ -415,7 +415,7 @@ int main(void)
     Suite *s;
     SRunner *sr;
 
-    s = foo_suite();
+    s = tsarray_suite();
     sr = srunner_create(s);
 
     srunner_run_all(sr, CK_VERBOSE);
