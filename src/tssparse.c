@@ -361,7 +361,7 @@ static int tssparse_append(struct _tssparse_abs *p_tssparse,
      */
 
     /* protect from overflowing into negative lengths */
-    if (!can_sadd(old_len, 1))
+    if (!can_int_add(old_len, 1))
         return TSSPARSE_EOVERFLOW;
 
     /* XXX: Maybe we should grow in chunks, instead of 1 at a time. */

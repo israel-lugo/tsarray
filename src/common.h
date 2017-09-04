@@ -92,13 +92,13 @@
 #endif
 
 
-static inline int can_sadd(const int x, const int y) __ATTR_CONST;
+static inline int can_int_add(const int x, const int y) __ATTR_CONST;
 
 
 /*
  * Check whether two signed integers can be added without overflowing.
  */
-static inline int can_sadd(const int x, const int y)
+static inline int can_int_add(const int x, const int y)
 {
     return likely((x <= 0 || y <= INT_MAX - x)
                   && (x >= 0 || y >= INT_MIN - x));
