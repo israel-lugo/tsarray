@@ -263,13 +263,13 @@ int tsarray_remove(struct _tsarray_abs *p_tsarray, int index, size_t obj_size)
 
 
 /*
- * Free the memory occupied by a tsarray's items.
+ * Free the memory occupied by a tsarray.
  *
  * This operation must be performed on a tsarray once it is no longer
  * necessary. Failure to do so will result in memory leaks.
  *
- * After this operation, the tsarray will be empty, but still valid. It can
- * be reused again by adding items to it.
+ * After this operation, the tsarray will be deallocated and invalid. It
+ * must not be used for anything.
  */
 void tsarray_free(struct _tsarray_abs *p_tsarray)
 {
@@ -278,13 +278,9 @@ void tsarray_free(struct _tsarray_abs *p_tsarray)
     assert(p_tsarray->len <= p_tsarray->_priv.capacity);
 
     if (p_tsarray->items != NULL)
-    {
         free(p_tsarray->items);
-        p_tsarray->items = NULL;
-    }
 
-    p_tsarray->len = 0;
-    p_tsarray->_priv.capacity = 0;
+    free(p_tsarray);
 }
 
 

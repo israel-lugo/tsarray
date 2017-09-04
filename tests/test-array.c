@@ -76,6 +76,7 @@ int main(void)
 
     puts("\na1- Cleaning up array");
     intarray_free(a1);
+    a1 = intarray_new();
     print_array_stats(a1);
 
     puts("\na1- Appending 77 and 88");
