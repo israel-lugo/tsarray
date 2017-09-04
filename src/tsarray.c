@@ -221,10 +221,14 @@ int tsarray_extend(struct _tsarray_abs *p_tsarray_dest,
     assert(p_tsarray_dest->len == dest_len + src_len);
     assert(p_tsarray_dest->items != NULL);
 
-    /* if src == dest, we can't read from src->items; dest->items may have
-     * been moved by the realloc, and we declared src as pointer-to-const,
-     * so the compiler is free to assume that src->items is never altered
-     * and reuse an old copy */
+    /* XXX: Can we declare p_tsarray_src as pointer-to-const? Would be good
+     * for the API contract. But tsarray_resize() may change dest->items,
+     * and if dest == src, that means src->items will change too. Compiler
+     * might assume that src->items is never altered and reuse an old copy.
+     * Or might it? What are the pointer aliasing rules for differently
+     * qualified pointers? In any case, this is only really relevant to the
+     * set_items call, source arg. We _could_ just do something like
+     * dest != src ? src->items : dest->items. */
     set_items(p_tsarray_dest->items, dest_len, p_tsarray_src->items, obj_size, src_len);
 
     return 0;
