@@ -375,6 +375,45 @@ START_TEST(test_extend_empty)
 END_TEST
 
 
+START_TEST(test_extend_self_one)
+{
+    const int value = 33;
+    int extend_result;
+
+    append_seq_checked(a1, value, value+1);
+
+    extend_result = intarray_extend(a1, a1);
+    ck_assert_int_eq(extend_result, 0);
+
+    ck_assert_uint_eq(a1->len, 2);
+    ck_assert_uint_ge(a1->_priv.capacity, a1->len);
+    ck_assert_int_eq(a1->items[0], value);
+    ck_assert_int_eq(a1->items[1], value);
+}
+END_TEST
+
+
+START_TEST(test_extend_self_large)
+{
+    const int stop = 1024;
+    int extend_result;
+    int i;
+
+    append_seq_checked(a1, 0, stop);
+
+    extend_result = intarray_extend(a1, a1);
+    ck_assert_int_eq(extend_result, 0);
+
+    ck_assert_uint_eq(a1->len, 2*stop);
+    ck_assert_uint_ge(a1->_priv.capacity, a1->len);
+    for (i=0; i<stop; i++)
+        ck_assert_int_eq(a1->items[i], i);
+    for (i=0; i<stop; i++)
+        ck_assert_int_eq(a1->items[stop+i], i);
+}
+END_TEST
+
+
 Suite *tsarray_suite(void)
 {
     Suite *s;
@@ -401,6 +440,8 @@ Suite *tsarray_suite(void)
     tcase_add_test(tc_ops, test_extend);
     tcase_add_test(tc_ops, test_extend_with_empty);
     tcase_add_test(tc_ops, test_extend_empty);
+    tcase_add_test(tc_ops, test_extend_self_one);
+    tcase_add_test(tc_ops, test_extend_self_large);
 
     suite_add_tcase(s, tc_memsizes);
     suite_add_tcase(s, tc_ops);
