@@ -299,6 +299,9 @@ START_TEST(test_remove_many)
 END_TEST
 
 
+/*
+ * Test extending a tsarray with elements from another one.
+ */
 START_TEST(test_extend)
 {
     intarray *a2 = intarray_new();
@@ -335,6 +338,9 @@ START_TEST(test_extend)
 END_TEST
 
 
+/*
+ * Test extending a tsarray with an empty tsarray.
+ */
 START_TEST(test_extend_with_empty)
 {
     intarray *a2 = intarray_new();
@@ -355,6 +361,9 @@ START_TEST(test_extend_with_empty)
 END_TEST
 
 
+/*
+ * Test extending an empty tsarray with a non-empty one.
+ */
 START_TEST(test_extend_empty)
 {
     intarray *a2 = intarray_new();
@@ -375,6 +384,9 @@ START_TEST(test_extend_empty)
 END_TEST
 
 
+/*
+ * Test extending a tsarray (of 1 item) with itself.
+ */
 START_TEST(test_extend_self_one)
 {
     const int value = 33;
@@ -393,6 +405,11 @@ START_TEST(test_extend_self_one)
 END_TEST
 
 
+/*
+ * Test extending a large tsarray with itself.
+ *
+ * This forces resizing of the tsarray, to test memory handling.
+ */
 START_TEST(test_extend_self_large)
 {
     const int stop = 1024;
