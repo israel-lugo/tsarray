@@ -21,6 +21,7 @@
 *.dylib
 
 # Executables
+tests/check-internal
 tests/check-tsarray
 tests/test-array
 tests/test-sparse

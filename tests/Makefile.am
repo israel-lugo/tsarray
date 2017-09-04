@@ -1,6 +1,6 @@
 
 # programs built only with "make check"; don't include in "make all"
-check_PROGRAMS = check-tsarray test-array test-sparse
+check_PROGRAMS = check-internal check-tsarray test-array test-sparse
 
 # run these programs as tests when doing "make check"
 TESTS = $(check_PROGRAMS)
@@ -8,6 +8,10 @@ TESTS = $(check_PROGRAMS)
 AM_CFLAGS = -I$(top_srcdir)/src
 
 libs_path = $(top_builddir)/src/.libs
+
+check_internal_SOURCES = check-internal.c $(top_builddir)/src/common.h
+check_internal_CFLAGS = $(AM_CFLAGS) @CHECK_CFLAGS@
+check_internal_LDADD = @CHECK_LIBS@
 
 check_tsarray_SOURCES = check-tsarray.c $(top_builddir)/src/tsarray.h
 check_tsarray_CFLAGS = $(AM_CFLAGS) @CHECK_CFLAGS@
