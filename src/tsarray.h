@@ -88,6 +88,9 @@ struct _tsarray_abs {
 
 struct _tsarray_abs *tsarray_new(void) __ATTR_MALLOC;
 
+struct _tsarray_abs *tsarray_from_array(const void *src, size_t src_len,
+        size_t obj_size) __ATTR_MALLOC;
+
 int tsarray_append(struct _tsarray_abs *p_tsarray, const void *object,
         size_t obj_size) __NON_NULL;
 
@@ -118,6 +121,10 @@ void tsarray_free(struct _tsarray_abs *p_tsarray) __NON_NULL;
     } arraytype; \
     static inline arraytype *arraytype##_new(void) { \
         return (arraytype *)tsarray_new(); \
+    } \
+    static inline arraytype *arraytype##_from_array(const void *src, \
+            size_t src_len) { \
+        return (arraytype *)tsarray_from_array(src, src_len, sizeof(objtype)); \
     } \
     static inline int arraytype##_append(arraytype *array, objtype *object) { \
         return tsarray_append((struct _tsarray_abs *)array, object, \

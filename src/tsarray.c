@@ -157,6 +157,52 @@ static int tsarray_resize(struct _tsarray_abs *p_tsarray, size_t new_len,
 
 
 /*
+ * Create a tsarray from a copy of a C array.
+ *
+ * Receives a pointer to a source memory area (C array), the number of
+ * items in the source, and the size of each item. Creates a new tsarray,
+ * and fills it with a copy of the items from the source array.
+ *
+ * If src_len is zero, an empty tsarray will be created, as though with
+ * tsarray_new(). The source array will not be read, and in particular it
+ * may be NULL.
+ *
+ * Returns a pointer to the newly created tsarray, or NULL in case of
+ * error.
+ */
+struct _tsarray_abs *tsarray_from_array(const void *src, size_t src_len,
+        size_t obj_size)
+{
+    struct _tsarray_abs *new = tsarray_new();
+    int retval;
+
+    /* pass the error up */
+    if (unlikely(new == NULL))
+        return NULL;
+
+    assert(src != NULL || src_len == 0);
+
+    /* empty source array means empty tsarray */
+    if (src_len == 0)
+        return new;
+
+    retval = tsarray_resize(new, src_len, obj_size);
+    if (unlikely(retval != 0))
+    {   /* rollback and error out */
+        tsarray_free(new);
+        return NULL;
+    }
+
+    assert(new->len == src_len);
+    assert(new->len <= new->_priv.capacity);
+
+    memcpy(new->items, src, src_len*obj_size);
+
+    return new;
+}
+
+
+/*
  * Append an object to the end of a tsarray.
  *
  * Receives the tsarray, an object and the object size for this array. Will

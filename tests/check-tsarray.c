@@ -431,6 +431,48 @@ START_TEST(test_extend_self_large)
 END_TEST
 
 
+/*
+ * Test creating a tsarray from a normal C array.
+ */
+START_TEST(test_from_array)
+{
+    static const int src[] = {
+        15, 66, 98, -7, 1, INT_MIN, -9, -45, 3, 0, -1, 15, INT_MAX
+    };
+    const size_t srclen = sizeof(src) / sizeof(src[0]);
+    intarray *b = intarray_from_array(src, srclen);
+    int i;
+
+    ck_assert_ptr_ne(b, NULL);
+    ck_assert_uint_eq(b->len, srclen);
+    ck_assert_uint_ge(b->_priv.capacity, b->len);
+
+    for (i=0; i<srclen; i++)
+        ck_assert_int_eq(b->items[i], src[i]);
+
+    intarray_free(b);
+}
+END_TEST
+
+
+/*
+ * Test creating a tsarray from an empty C array.
+ *
+ * Makes sure that tsarray_from_array(x, 0) doesn't read from x. In
+ * particular, x can be NULL.
+ */
+START_TEST(test_from_array_empty)
+{
+    intarray *b = intarray_from_array(NULL, 0);
+
+    ck_assert_ptr_ne(b, NULL);
+    ck_assert_uint_eq(b->len, 0);
+
+    intarray_free(b);
+}
+END_TEST
+
+
 Suite *tsarray_suite(void)
 {
     Suite *s;
@@ -446,6 +488,8 @@ Suite *tsarray_suite(void)
 
     tcase_add_checked_fixture(tc_ops, new_array, del_array);
     tcase_add_test(tc_ops, test_create_and_free);
+    tcase_add_test(tc_ops, test_from_array);
+    tcase_add_test(tc_ops, test_from_array_empty);
     tcase_add_test(tc_ops, test_append_one);
     tcase_add_test(tc_ops, test_append_many);
     tcase_add_test(tc_ops, test_append_overflow);
