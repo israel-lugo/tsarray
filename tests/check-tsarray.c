@@ -444,6 +444,7 @@ START_TEST(test_from_array)
     int i;
 
     ck_assert_ptr_ne(b, NULL);
+    ck_assert_ptr_ne(b->items, src);
     ck_assert_uint_eq(b->len, srclen);
     ck_assert_uint_ge(b->_priv.capacity, b->len);
 
