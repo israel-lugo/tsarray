@@ -203,6 +203,24 @@ struct _tsarray_abs *tsarray_from_array(const void *src, size_t src_len,
 
 
 /*
+ * Create a tsarray as a copy of an existing tsarray.
+ *
+ * Receives the source tsarray and the size of its items. Creates a new
+ * tsarray, and fills it with a copy of the items from the source tsarray.
+ *
+ * Returns a pointer to the newly created tsarray, or NULL in case of
+ * error.
+ */
+struct _tsarray_abs *tsarray_copy(const struct _tsarray_abs *p_tsarray_src,
+        size_t obj_size)
+{
+    assert(p_tsarray_src->len <= p_tsarray_src->_priv.capacity);
+
+    return tsarray_from_array(p_tsarray_src->items, p_tsarray_src->len, obj_size);
+}
+
+
+/*
  * Append an object to the end of a tsarray.
  *
  * Receives the tsarray, an object and the object size for this array. Will

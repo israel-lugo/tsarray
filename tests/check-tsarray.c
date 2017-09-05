@@ -474,6 +474,48 @@ START_TEST(test_from_array_empty)
 END_TEST
 
 
+/*
+ * Test creating a copy of a tsarray.
+ */
+START_TEST(test_copy)
+{
+    const int stop = 20;
+    intarray *a2;
+    int i;
+
+    append_seq_checked(a1, 0, stop);
+
+    a2 = intarray_copy(a1);
+
+    ck_assert_ptr_ne(a2, NULL);
+    ck_assert_ptr_ne(a2, a1);
+    ck_assert_uint_eq(a2->len, a1->len);
+    ck_assert_uint_ge(a2->_priv.capacity, a2->len);
+
+    for (i=0; i<stop; i++)
+        ck_assert_int_eq(a2->items[i], a1->items[i]);
+
+    intarray_free(a2);
+}
+END_TEST
+
+
+/*
+ * Test copying an empty tsarray.
+ */
+START_TEST(test_copy_empty)
+{
+    intarray *a2 = intarray_copy(a1);
+
+    ck_assert_ptr_ne(a2, NULL);
+    ck_assert_ptr_ne(a2, a1);
+    ck_assert_uint_eq(a2->len, 0);
+
+    intarray_free(a2);
+}
+END_TEST
+
+
 Suite *tsarray_suite(void)
 {
     Suite *s;
@@ -499,6 +541,8 @@ Suite *tsarray_suite(void)
     tcase_add_test(tc_ops, test_remove_noent);
     tcase_add_test(tc_ops, test_remove_middle);
     tcase_add_test(tc_ops, test_remove_many);
+    tcase_add_test(tc_ops, test_copy);
+    tcase_add_test(tc_ops, test_copy_empty);
     tcase_add_test(tc_ops, test_extend);
     tcase_add_test(tc_ops, test_extend_with_empty);
     tcase_add_test(tc_ops, test_extend_empty);
