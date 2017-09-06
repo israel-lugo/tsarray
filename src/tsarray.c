@@ -180,11 +180,15 @@ struct _tsarray_abs *tsarray_from_array(const void *src, size_t src_len,
     if (unlikely(new == NULL))
         return NULL;
 
-    assert(src != NULL || src_len == 0);
-
     /* empty source array means empty tsarray */
     if (src_len == 0)
         return new;
+
+    if (src == NULL)
+    {   /* invalid args: src = NULL and src_len != 0 */
+        tsarray_free(new);
+        return NULL;
+    }
 
     retval = tsarray_resize(new, src_len, obj_size);
     if (unlikely(retval != 0))
