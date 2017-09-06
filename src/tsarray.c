@@ -186,15 +186,13 @@ struct _tsarray_abs *tsarray_from_array(const void *src, size_t src_len,
 
     if (src == NULL)
     {   /* invalid args: src = NULL and src_len != 0 */
-        tsarray_free(new);
-        return NULL;
+        goto _free_and_error;
     }
 
     retval = tsarray_resize(new, src_len, obj_size);
     if (unlikely(retval != 0))
     {   /* rollback and error out */
-        tsarray_free(new);
-        return NULL;
+        goto _free_and_error;
     }
 
     assert(new->len == src_len);
@@ -203,6 +201,10 @@ struct _tsarray_abs *tsarray_from_array(const void *src, size_t src_len,
     memcpy(new->items, src, src_len*obj_size);
 
     return new;
+
+_free_and_error:
+    tsarray_free(new);
+    return NULL;
 }
 
 
