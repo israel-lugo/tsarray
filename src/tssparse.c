@@ -416,8 +416,9 @@ static int tssparse_reuse(struct _tssparse_abs *p_tssparse,
 static inline struct _item_abs *get_nth_item(
         const struct _item_abs *items, int index, size_t item_size)
 {
-    /* void * has alignment of 1 */
-    return (struct _item_abs *)((void *)items + (index * item_size));
+    /* can't use void for pointer arithmetic, it's an incomplete type
+     * (also, char can alias anything; it's meant for this) */
+    return (struct _item_abs *)((char *)items + (index * item_size));
 }
 
 

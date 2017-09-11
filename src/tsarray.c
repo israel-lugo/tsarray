@@ -327,7 +327,7 @@ int tsarray_remove(struct _tsarray_abs *p_tsarray, int index, size_t obj_size)
     if (index < old_len-1)
     {   /* there's data to the right, need to move it left */
         const size_t bytes_to_move = (old_len - index - 1)*obj_size;
-        void *item_to_rm = get_nth_item(p_tsarray->items, index, obj_size);
+        char *item_to_rm = get_nth_item(p_tsarray->items, index, obj_size);
 
         memmove(item_to_rm, item_to_rm+obj_size, bytes_to_move);
     }
@@ -367,8 +367,9 @@ void tsarray_free(struct _tsarray_abs *p_tsarray)
 static inline void *get_nth_item(const void *items, size_t index,
         size_t obj_size)
 {
-    /* void * has alignment of 1 */
-    return ((void *)items + (index * obj_size));
+    /* can't use void for pointer arithmetic, it's an incomplete type
+     * (also, char can alias anything; it's meant for this) */
+    return ((char *)items + (index * obj_size));
 }
 
 
@@ -389,12 +390,13 @@ static inline void *get_nth_item(const void *items, size_t index,
 static void set_items(void *items, size_t index, const void *objects,
         size_t obj_size, size_t count)
 {
-    void *dest = get_nth_item(items, index, obj_size);
+    char *dest = get_nth_item(items, index, obj_size);
     assert(can_size_mult(obj_size, count));
     const size_t bytes = obj_size*count;
 
     /* memory ranges don't overlap */
-    assert((objects < dest && objects+bytes <= dest) || (dest < objects && dest+bytes <= objects));
+    assert(((char *)objects < dest && (char *)objects+bytes <= dest)
+           || (dest < (char *)objects && dest+bytes <= (char *)objects));
 
     memcpy(dest, objects, obj_size*count);
 }
