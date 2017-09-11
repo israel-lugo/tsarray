@@ -72,6 +72,8 @@ struct _tsarray_pub *tsarray_from_array(const void *src, size_t src_len,
 struct _tsarray_pub *tsarray_copy(const struct _tsarray_pub *tsarray_src)
     __NON_NULL __ATTR_MALLOC;
 
+size_t tsarray_len(const struct _tsarray_pub *tsarray) __ATTR_CONST __NON_NULL;
+
 int tsarray_append(struct _tsarray_pub *tsarray, const void *object) __NON_NULL;
 
 int tsarray_extend(struct _tsarray_pub *tsarray_dest,
@@ -103,6 +105,9 @@ void tsarray_free(struct _tsarray_pub *p_tsarray) __NON_NULL;
     } \
     static inline arraytype *arraytype##_copy(const arraytype *array) { \
         return (arraytype *)tsarray_copy((const struct _tsarray_pub *)array); \
+    } \
+    static inline size_t arraytype##_len(const arraytype *array) { \
+        return tsarray_len((const struct _tsarray_pub *)array); \
     } \
     static inline int arraytype##_append(arraytype *array, objtype *object) { \
         return tsarray_append((struct _tsarray_pub *)array, object); \

@@ -91,6 +91,15 @@ static void set_items(void *items, size_t index, const void *objects,
 
 
 /*
+ * Get the number of items in a tsarray.
+ */
+size_t tsarray_len(const struct _tsarray_pub *tsarray)
+{
+    return ((const struct _tsarray_priv *)tsarray)->len;
+}
+
+
+/*
  * Create a new, empty, tsarray.
  *
  * Receives the size of the array's items. Returns a pointer to the newly

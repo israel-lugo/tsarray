@@ -116,11 +116,32 @@ END_TEST
 
 
 /*
+ * Test getting the length of an empty tsarray.
+ */
+START_TEST(test_len_empty)
+{
+    ck_assert_uint_eq(intarray_len(a1), 0);
+}
+END_TEST
+
+
+/*
  * Test appending an element to an empty tsarray.
  */
 START_TEST(test_append_one)
 {
     append_seq_checked(a1, 10, 11);
+}
+END_TEST
+
+
+/*
+ * Test getting the length of a tsarray of 1 element.
+ */
+START_TEST(test_len_one)
+{
+    append_seq_checked(a1, 10, 11);
+    ck_assert_uint_eq(intarray_len(a1), 1);
 }
 END_TEST
 
@@ -543,9 +564,11 @@ Suite *tsarray_suite(void)
 
     tcase_add_checked_fixture(tc_ops, new_array, del_array);
     tcase_add_test(tc_ops, test_create_and_free);
+    tcase_add_test(tc_ops, test_len_empty);
     tcase_add_test(tc_ops, test_from_array);
     tcase_add_test(tc_ops, test_from_array_empty);
     tcase_add_test(tc_ops, test_append_one);
+    tcase_add_test(tc_ops, test_len_one);
     tcase_add_test(tc_ops, test_append_many);
     tcase_add_test(tc_ops, test_append_overflow);
     tcase_add_test(tc_ops, test_remove);
