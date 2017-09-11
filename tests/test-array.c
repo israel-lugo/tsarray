@@ -2,6 +2,20 @@
 
 #include <tsarray.h>
 
+
+/*
+ * Copied here from src/tsarray.c. This is internal use only. Must keep in
+ * sync with the definition in src/tsarray.c.
+ */
+struct _tsarray_priv {
+    struct _tsarray_pub pub;
+    size_t obj_size;
+    size_t capacity;
+    size_t len;
+};
+
+
+
 TSARRAY_TYPEDEF(intarray, int);
 
 
@@ -11,15 +25,17 @@ intarray *a2;
 
 static void _print_array(const intarray *a, const char *name)
 {
+    struct _tsarray_priv *priv = (struct _tsarray_priv *)a;
     int i;
 
-    for (i=0; i < a->len; i++)
+    for (i=0; i < priv->len; i++)
         printf("%s[%d] = %d\n", name, i, a->items[i]);
 }
 
 static void _print_array_stats(const intarray *a, const char *name)
 {
-    printf("%s- len: %lu, capacity: %lu\n", name, a->len, a->_priv.capacity);
+    struct _tsarray_priv *priv = (struct _tsarray_priv *)a;
+    printf("%s- len: %lu, capacity: %lu\n", name, priv->len, priv->capacity);
 }
 
 #define print_array(a) _print_array(a, #a)

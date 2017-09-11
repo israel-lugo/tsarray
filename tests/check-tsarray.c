@@ -34,6 +34,18 @@
 #include <tsarray.h>
 
 
+/*
+ * Copied here from src/tsarray.c. This is internal use only. Must keep in
+ * sync with the definition in src/tsarray.c.
+ */
+struct _tsarray_priv {
+    struct _tsarray_pub pub;
+    size_t obj_size;
+    size_t capacity;
+    size_t len;
+};
+
+
 TSARRAY_TYPEDEF(intarray, int);
 
 intarray *a1 = NULL;
@@ -50,16 +62,17 @@ intarray *a1 = NULL;
  */
 static void append_seq_checked(intarray *a, int start, int stop)
 {
+    struct _tsarray_priv *priv = (struct _tsarray_priv *)a;
     int i;
 
     for (i=start; i<stop; i++)
     {
-        const size_t old_len = a->len;
+        const size_t old_len = priv->len;
         int append_result = intarray_append(a, &i);
         ck_assert_int_eq(append_result, 0);
 
-        ck_assert_uint_eq(a->len, old_len+1);
-        ck_assert_uint_ge(a->_priv.capacity, a->len);
+        ck_assert_uint_eq(priv->len, old_len+1);
+        ck_assert_uint_ge(priv->capacity, priv->len);
         ck_assert_int_eq(a->items[old_len], i);
     }
 }
@@ -84,26 +97,10 @@ void new_array(void)
  */
 void del_array(void)
 {
-    ck_assert_int_eq((a1->items == NULL), (a1->_priv.capacity == 0));
+    struct _tsarray_priv *priv = (struct _tsarray_priv *)a1;
+    ck_assert_int_eq((a1->items == NULL), (priv->capacity == 0));
     intarray_free(a1);
 }
-
-
-/*
- * Make sure abstract tsarray is the same size as a type-specific "subclass".
- *
- * We rely on this for the constructor, and elsewhere.
- *
- * This is tested in a test case of its own, without the test fixture that
- * initializes an empty tsarray. The whole point is to catch any potential
- * problems before the constructor hits them.
- */
-START_TEST(test_tsarray_size)
-{
-    /* tsarray_new() assumes this much */
-    ck_assert_uint_eq(sizeof(intarray), sizeof(struct _tsarray_abs));
-}
-END_TEST
 
 
 /*
@@ -111,8 +108,9 @@ END_TEST
  */
 START_TEST(test_create_and_free)
 {
-    ck_assert_uint_eq(a1->len, 0);
-    ck_assert_uint_ge(a1->_priv.capacity, 0);
+    struct _tsarray_priv *priv = (struct _tsarray_priv *)a1;
+    ck_assert_uint_eq(priv->len, 0);
+    ck_assert_uint_ge(priv->capacity, 0);
 }
 END_TEST
 
@@ -155,27 +153,28 @@ END_TEST
  */
 START_TEST(test_append_overflow)
 {
-    const size_t old_capacity = a1->_priv.capacity;
-    const size_t old_len = a1->len;
+    struct _tsarray_priv *priv = (struct _tsarray_priv *)a1;
+    const size_t old_capacity = priv->capacity;
+    const size_t old_len = priv->len;
     int *const old_items = a1->items;
     int i = 5;
     int append_result;
 
     /* we cheat by messing with the internal structure, to avoid having to
      * actually append millions of objects */
-    a1->len = a1->_priv.capacity = SIZE_MAX;
+    priv->len = priv->capacity = SIZE_MAX;
 
     append_result = intarray_append(a1, &i);
     ck_assert_int_eq(append_result, TSARRAY_EOVERFLOW);
 
     /* make sure append didn't change anything */
-    ck_assert_uint_eq(a1->_priv.capacity, SIZE_MAX);
-    ck_assert_uint_eq(a1->len, SIZE_MAX);
+    ck_assert_uint_eq(priv->capacity, SIZE_MAX);
+    ck_assert_uint_eq(priv->len, SIZE_MAX);
     ck_assert_ptr_eq(a1->items, old_items);
 
     /* undo the cheating, destructor may need the real values */
-    a1->_priv.capacity = old_capacity;
-    a1->len = old_len;
+    priv->capacity = old_capacity;
+    priv->len = old_len;
 }
 END_TEST
 
@@ -185,6 +184,7 @@ END_TEST
  */
 START_TEST(test_remove)
 {
+    struct _tsarray_priv *priv = (struct _tsarray_priv *)a1;
     int remove_result;
 
     append_seq_checked(a1, 10, 11);
@@ -192,7 +192,7 @@ START_TEST(test_remove)
     remove_result = intarray_remove(a1, 0);
     ck_assert_int_eq(remove_result, 0);
 
-    ck_assert_uint_eq(a1->len, 0);
+    ck_assert_uint_eq(priv->len, 0);
 }
 END_TEST
 
@@ -202,11 +202,12 @@ END_TEST
  */
 START_TEST(test_remove_empty)
 {
+    struct _tsarray_priv *priv = (struct _tsarray_priv *)a1;
     int remove_result;
 
     remove_result = intarray_remove(a1, 0);
     ck_assert_int_eq(remove_result, TSARRAY_ENOENT);
-    ck_assert_int_eq(a1->len, 0);
+    ck_assert_int_eq(priv->len, 0);
 }
 END_TEST
 
@@ -216,6 +217,7 @@ END_TEST
  */
 START_TEST(test_remove_noent)
 {
+    struct _tsarray_priv *priv = (struct _tsarray_priv *)a1;
     const int value = 10;
     int remove_result;
 
@@ -225,8 +227,8 @@ START_TEST(test_remove_noent)
     ck_assert_int_eq(remove_result, TSARRAY_ENOENT);
 
     /* make sure the existing item is still there */
-    ck_assert_int_eq(a1->len, 1);
-    ck_assert_uint_ge(a1->_priv.capacity, a1->len);
+    ck_assert_int_eq(priv->len, 1);
+    ck_assert_uint_ge(priv->capacity, priv->len);
     ck_assert_int_eq(a1->items[0], value);
 }
 END_TEST
@@ -239,6 +241,7 @@ END_TEST
  */
 START_TEST(test_remove_middle)
 {
+    struct _tsarray_priv *priv = (struct _tsarray_priv *)a1;
     const int stop = 20;
     const int remove_idx = stop/2;
     int remove_result;
@@ -249,8 +252,8 @@ START_TEST(test_remove_middle)
     remove_result = intarray_remove(a1, remove_idx);
     ck_assert_int_eq(remove_result, 0);
 
-    ck_assert_uint_eq(a1->len, stop-1);
-    ck_assert_uint_ge(a1->_priv.capacity, a1->len);
+    ck_assert_uint_eq(priv->len, stop-1);
+    ck_assert_uint_ge(priv->capacity, priv->len);
 
     /* check that all remaining items are there, in right order */
     for (i=0; i<remove_idx; i++)
@@ -269,6 +272,7 @@ END_TEST
  */
 START_TEST(test_remove_many)
 {
+    struct _tsarray_priv *priv = (struct _tsarray_priv *)a1;
     const int start = -1010;
     const int stop = 32010;
     const size_t full_len = stop-start;
@@ -280,10 +284,10 @@ START_TEST(test_remove_many)
 
     /* fill the array */
     append_seq_checked(a1, start, stop);
-    ck_assert_uint_eq(a1->len, full_len);
-    ck_assert_uint_ge(a1->_priv.capacity, a1->len);
+    ck_assert_uint_eq(priv->len, full_len);
+    ck_assert_uint_ge(priv->capacity, priv->len);
 
-    full_capacity = a1->_priv.capacity;
+    full_capacity = priv->capacity;
 
     for (i=0; i<remove_count; i++)
     {
@@ -292,9 +296,9 @@ START_TEST(test_remove_many)
     }
 
     /* make sure len is correct, and array was shrunk */
-    ck_assert_uint_eq(a1->len, len_after_remove);
-    ck_assert_uint_lt(a1->_priv.capacity, full_capacity);
-    ck_assert_uint_ge(a1->_priv.capacity, a1->len);
+    ck_assert_uint_eq(priv->len, len_after_remove);
+    ck_assert_uint_lt(priv->capacity, full_capacity);
+    ck_assert_uint_ge(priv->capacity, priv->len);
 }
 END_TEST
 
@@ -305,6 +309,8 @@ END_TEST
 START_TEST(test_extend)
 {
     intarray *a2 = intarray_new();
+    struct _tsarray_priv *priv1 = (struct _tsarray_priv *)a1;
+    struct _tsarray_priv *priv2 = (struct _tsarray_priv *)a2;
     const int a1stop = 10;
     const int a2stop = 60;
     int *a2_items;
@@ -322,15 +328,15 @@ START_TEST(test_extend)
     ck_assert_int_eq(extend_result, 0);
 
     /* check a2 wasn't changed, then free it */
-    ck_assert_uint_eq(a2->len, a2stop-a1stop);
+    ck_assert_uint_eq(priv2->len, a2stop-a1stop);
     ck_assert_ptr_eq(a2->items, a2_items);
     for (i=0; i<a2stop-a1stop; i++)
         ck_assert_int_eq(a2->items[i], i+a1stop);
     intarray_free(a2);
 
     /* check a1 was extended with the contents of a2 */
-    ck_assert_uint_eq(a1->len, a2stop);
-    ck_assert_uint_ge(a1->_priv.capacity, a1->len);
+    ck_assert_uint_eq(priv1->len, a2stop);
+    ck_assert_uint_ge(priv1->capacity, priv1->len);
 
     for (i=0; i<a2stop; i++)
         ck_assert_int_eq(a1->items[i], i);
@@ -344,6 +350,7 @@ END_TEST
 START_TEST(test_extend_with_empty)
 {
     intarray *a2 = intarray_new();
+    struct _tsarray_priv *priv1 = (struct _tsarray_priv *)a1;
     const int value = 33;
     int extend_result;
 
@@ -354,8 +361,8 @@ START_TEST(test_extend_with_empty)
 
     intarray_free(a2);
 
-    ck_assert_uint_eq(a1->len, 1);
-    ck_assert_uint_ge(a1->_priv.capacity, a1->len);
+    ck_assert_uint_eq(priv1->len, 1);
+    ck_assert_uint_ge(priv1->capacity, priv1->len);
     ck_assert_int_eq(a1->items[0], value);
 }
 END_TEST
@@ -366,6 +373,7 @@ END_TEST
  */
 START_TEST(test_extend_empty)
 {
+    struct _tsarray_priv *priv1 = (struct _tsarray_priv *)a1;
     intarray *a2 = intarray_new();
     const int value = 33;
     int extend_result;
@@ -377,8 +385,8 @@ START_TEST(test_extend_empty)
 
     intarray_free(a2);
 
-    ck_assert_uint_eq(a1->len, 1);
-    ck_assert_uint_ge(a1->_priv.capacity, a1->len);
+    ck_assert_uint_eq(priv1->len, 1);
+    ck_assert_uint_ge(priv1->capacity, priv1->len);
     ck_assert_int_eq(a1->items[0], value);
 }
 END_TEST
@@ -389,6 +397,7 @@ END_TEST
  */
 START_TEST(test_extend_self_one)
 {
+    struct _tsarray_priv *priv = (struct _tsarray_priv *)a1;
     const int value = 33;
     int extend_result;
 
@@ -397,8 +406,8 @@ START_TEST(test_extend_self_one)
     extend_result = intarray_extend(a1, a1);
     ck_assert_int_eq(extend_result, 0);
 
-    ck_assert_uint_eq(a1->len, 2);
-    ck_assert_uint_ge(a1->_priv.capacity, a1->len);
+    ck_assert_uint_eq(priv->len, 2);
+    ck_assert_uint_ge(priv->capacity, priv->len);
     ck_assert_int_eq(a1->items[0], value);
     ck_assert_int_eq(a1->items[1], value);
 }
@@ -412,6 +421,7 @@ END_TEST
  */
 START_TEST(test_extend_self_large)
 {
+    struct _tsarray_priv *priv = (struct _tsarray_priv *)a1;
     const int stop = 1024;
     int extend_result;
     int i;
@@ -421,8 +431,8 @@ START_TEST(test_extend_self_large)
     extend_result = intarray_extend(a1, a1);
     ck_assert_int_eq(extend_result, 0);
 
-    ck_assert_uint_eq(a1->len, 2*stop);
-    ck_assert_uint_ge(a1->_priv.capacity, a1->len);
+    ck_assert_uint_eq(priv->len, 2*stop);
+    ck_assert_uint_ge(priv->capacity, priv->len);
     for (i=0; i<stop; i++)
         ck_assert_int_eq(a1->items[i], i);
     for (i=0; i<stop; i++)
@@ -441,12 +451,13 @@ START_TEST(test_from_array)
     };
     const size_t srclen = sizeof(src) / sizeof(src[0]);
     intarray *b = intarray_from_array(src, srclen);
+    struct _tsarray_priv *privb = (struct _tsarray_priv *)b;
     int i;
 
     ck_assert_ptr_ne(b, NULL);
     ck_assert_ptr_ne(b->items, src);
-    ck_assert_uint_eq(b->len, srclen);
-    ck_assert_uint_ge(b->_priv.capacity, b->len);
+    ck_assert_uint_eq(privb->len, srclen);
+    ck_assert_uint_ge(privb->capacity, privb->len);
 
     for (i=0; i<srclen; i++)
         ck_assert_int_eq(b->items[i], src[i]);
@@ -465,9 +476,10 @@ END_TEST
 START_TEST(test_from_array_empty)
 {
     intarray *b = intarray_from_array(NULL, 0);
+    struct _tsarray_priv *privb = (struct _tsarray_priv *)b;
 
     ck_assert_ptr_ne(b, NULL);
-    ck_assert_uint_eq(b->len, 0);
+    ck_assert_uint_eq(privb->len, 0);
 
     intarray_free(b);
 }
@@ -479,6 +491,8 @@ END_TEST
  */
 START_TEST(test_copy)
 {
+    struct _tsarray_priv *priv1 = (struct _tsarray_priv *)a1;
+    struct _tsarray_priv *priv2;
     const int stop = 20;
     intarray *a2;
     int i;
@@ -486,11 +500,12 @@ START_TEST(test_copy)
     append_seq_checked(a1, 0, stop);
 
     a2 = intarray_copy(a1);
+    priv2 = (struct _tsarray_priv *)a2;
 
     ck_assert_ptr_ne(a2, NULL);
     ck_assert_ptr_ne(a2, a1);
-    ck_assert_uint_eq(a2->len, a1->len);
-    ck_assert_uint_ge(a2->_priv.capacity, a2->len);
+    ck_assert_uint_eq(priv2->len, priv1->len);
+    ck_assert_uint_ge(priv2->capacity, priv2->len);
 
     for (i=0; i<stop; i++)
         ck_assert_int_eq(a2->items[i], a1->items[i]);
@@ -506,10 +521,11 @@ END_TEST
 START_TEST(test_copy_empty)
 {
     intarray *a2 = intarray_copy(a1);
+    struct _tsarray_priv *priv2 = (struct _tsarray_priv *)a2;
 
     ck_assert_ptr_ne(a2, NULL);
     ck_assert_ptr_ne(a2, a1);
-    ck_assert_uint_eq(a2->len, 0);
+    ck_assert_uint_eq(priv2->len, 0);
 
     intarray_free(a2);
 }
@@ -519,15 +535,11 @@ END_TEST
 Suite *tsarray_suite(void)
 {
     Suite *s;
-    TCase *tc_memsizes;
     TCase *tc_ops;
 
     s = suite_create("tsarray");
 
-    tc_memsizes = tcase_create("memsizes");
     tc_ops = tcase_create("operations");
-
-    tcase_add_test(tc_memsizes, test_tsarray_size);
 
     tcase_add_checked_fixture(tc_ops, new_array, del_array);
     tcase_add_test(tc_ops, test_create_and_free);
@@ -549,7 +561,6 @@ Suite *tsarray_suite(void)
     tcase_add_test(tc_ops, test_extend_self_one);
     tcase_add_test(tc_ops, test_extend_self_large);
 
-    suite_add_tcase(s, tc_memsizes);
     suite_add_tcase(s, tc_ops);
 
     return s;
