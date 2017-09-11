@@ -42,6 +42,30 @@
 
 
 /*
+ * Private version of the tsarray. This contains the public version that
+ * the user knows about, and gives to us.
+ *
+ * C99 allows us to access the same object internally through these
+ * different pointers, since the public version is contained by the private
+ * one, and (by section 6.5) an aggregate may alias a pointer to one of its
+ * members.
+ *
+ * The public object need not be the first member in the private one.
+ * However, this makes it easier to get the private pointer from the public
+ * one: we just need to do a cast. Otherwise, we would need a get_priv()
+ * that subtracts offsetof(struct _tsarray_priv, pub) from its argument
+ * (cast to char *), then casts the result to struct _tsarray_priv *.
+ */
+struct _tsarray_priv {
+    struct _tsarray_pub pub;    /* MUST be the first member (read above) */
+    size_t obj_size;
+    size_t capacity;
+    size_t len;
+};
+
+
+
+/*
  * The array's capacity is calculated in tsarray_resize, according to the
  * following formula:
  *      capacity = len*(1 + 1/MARGIN_RATIO) + MIN_MARGIN
@@ -69,28 +93,29 @@ static void set_items(void *items, size_t index, const void *objects,
 /*
  * Create a new, empty, tsarray.
  *
- * Returns a pointer to the newly created tsarray, or NULL in case of error
- * while allocating memory.
+ * Receives the size of the array's items. Returns a pointer to the newly
+ * created tsarray, or NULL in case of error while allocating memory.
  */
-struct _tsarray_abs *tsarray_new(void)
+struct _tsarray_pub *tsarray_new(size_t obj_size)
 {
-    struct _tsarray_abs *new = malloc(sizeof(struct _tsarray_abs));
+    struct _tsarray_priv *priv = malloc(sizeof(struct _tsarray_priv));
 
-    if (unlikely(new == NULL))
+    if (unlikely(priv == NULL))
         return NULL;
 
-    new->len = 0;
-    new->items = NULL;
-    new->_priv.capacity = 0;
+    priv->pub.items = NULL;
+    priv->obj_size = obj_size;
+    priv->capacity = 0;
+    priv->len = 0;
 
-    return new;
+    return &priv->pub;
 }
 
 
 /*
  * Sets a tsarray's length, adjusting its capacity if necessary.
  *
- * Receives the tsarray, the new length, and the object size. Sets the
+ * Receives a private tsarray descriptor and the new length. Sets the
  * array's length, and resizes the array if necessary.
  *
  * If the new length is beyond the array's capacity, the array will be
@@ -102,11 +127,11 @@ struct _tsarray_abs *tsarray_new(void)
  *
  * Returns zero in case of success, a negative error value otherwise.
  */
-static int tsarray_resize(struct _tsarray_abs *p_tsarray, size_t new_len,
-        size_t obj_size)
+static int tsarray_resize(struct _tsarray_priv *priv, size_t new_len)
 {
-    const size_t old_len = p_tsarray->len;
-    size_t capacity = p_tsarray->_priv.capacity;
+    const size_t old_len = priv->len;
+    const size_t obj_size = priv->obj_size;
+    size_t capacity = priv->capacity;
 
     assert(old_len <= capacity);
 
@@ -141,16 +166,16 @@ static int tsarray_resize(struct _tsarray_abs *p_tsarray, size_t new_len,
             assert(capacity >= new_len);
         }
 
-        new_items = realloc(p_tsarray->items, capacity*obj_size);
+        new_items = realloc(priv->pub.items, capacity*obj_size);
 
         if (unlikely(new_items == NULL))
             return TSARRAY_ENOMEM;
 
-        p_tsarray->items = new_items;
-        p_tsarray->_priv.capacity = capacity;
+        priv->pub.items = new_items;
+        priv->capacity = capacity;
     }
 
-    p_tsarray->len = new_len;
+    priv->len = new_len;
 
     return 0;
 }
@@ -170,40 +195,43 @@ static int tsarray_resize(struct _tsarray_abs *p_tsarray, size_t new_len,
  * Returns a pointer to the newly created tsarray, or NULL in case of
  * error.
  */
-struct _tsarray_abs *tsarray_from_array(const void *src, size_t src_len,
+struct _tsarray_pub *tsarray_from_array(const void *src, size_t src_len,
         size_t obj_size)
 {
-    struct _tsarray_abs *new = tsarray_new();
+    struct _tsarray_pub *pub = tsarray_new(obj_size);
+    struct _tsarray_priv *priv;
     int retval;
 
     /* pass the error up */
-    if (unlikely(new == NULL))
+    if (unlikely(pub == NULL))
         return NULL;
 
     /* empty source array means empty tsarray */
     if (src_len == 0)
-        return new;
+        return pub;
 
     if (src == NULL)
     {   /* invalid args: src = NULL and src_len != 0 */
         goto _free_and_error;
     }
 
-    retval = tsarray_resize(new, src_len, obj_size);
+    priv = (struct _tsarray_priv *)pub;
+
+    retval = tsarray_resize(priv, src_len);
     if (unlikely(retval != 0))
     {   /* rollback and error out */
         goto _free_and_error;
     }
 
-    assert(new->len == src_len);
-    assert(new->len <= new->_priv.capacity);
+    assert(priv->len == src_len);
+    assert(priv->len <= priv->capacity);
 
-    memcpy(new->items, src, src_len*obj_size);
+    memcpy(pub->items, src, src_len*obj_size);
 
-    return new;
+    return pub;
 
 _free_and_error:
-    tsarray_free(new);
+    tsarray_free(pub);
     return NULL;
 }
 
@@ -211,47 +239,48 @@ _free_and_error:
 /*
  * Create a tsarray as a copy of an existing tsarray.
  *
- * Receives the source tsarray and the size of its items. Creates a new
- * tsarray, and fills it with a copy of the items from the source tsarray.
+ * Receives the source tsarray. Creates a new tsarray, and fills it with a
+ * copy of the items from the source tsarray.
  *
  * Returns a pointer to the newly created tsarray, or NULL in case of
  * error.
  */
-struct _tsarray_abs *tsarray_copy(const struct _tsarray_abs *p_tsarray_src,
-        size_t obj_size)
+struct _tsarray_pub *tsarray_copy(const struct _tsarray_pub *src_tsarray)
 {
-    assert(p_tsarray_src->len <= p_tsarray_src->_priv.capacity);
+    const struct _tsarray_priv *priv = (const struct _tsarray_priv *)src_tsarray;
 
-    return tsarray_from_array(p_tsarray_src->items, p_tsarray_src->len, obj_size);
+    assert(priv->len <= priv->capacity);
+
+    return tsarray_from_array(src_tsarray->items, priv->len, priv->obj_size);
 }
 
 
 /*
  * Append an object to the end of a tsarray.
  *
- * Receives the tsarray, an object and the object size for this array. Will
- * grow the array if necessary.
+ * Receives the tsarray, and a pointer to an object. Will grow the array if
+ * necessary.
  *
  * Returns zero in case of success, or a negative error value in case of
  * error.
  */
-int tsarray_append(struct _tsarray_abs *p_tsarray, const void *object,
-        size_t obj_size)
+int tsarray_append(struct _tsarray_pub *tsarray, const void *object)
 {
-    size_t old_len = p_tsarray->len;
+    struct _tsarray_priv *priv = (struct _tsarray_priv *)tsarray;
+    const size_t old_len = priv->len;
     int retval;
 
     if (unlikely(!can_size_add(old_len, 1)))
         return TSARRAY_EOVERFLOW;
 
-    retval = tsarray_resize(p_tsarray, old_len+1, obj_size);
+    retval = tsarray_resize(priv, old_len+1);
     if (unlikely(retval != 0))
         return retval;
 
     /* there has to be room after a resize */
-    assert(p_tsarray->len <= p_tsarray->_priv.capacity);
+    assert(priv->len <= priv->capacity);
 
-    set_items(p_tsarray->items, old_len, object, obj_size, 1);
+    set_items(tsarray->items, old_len, object, priv->obj_size, 1);
 
     return 0;
 }
@@ -260,9 +289,9 @@ int tsarray_append(struct _tsarray_abs *p_tsarray, const void *object,
 /*
  * Extend a tsarray by appending objects from another tsarray.
  *
- * Receives the destination tsarray, the source tsarray, and the object
- * size. Appends a copy of all the objects in the source tsarray to the
- * dest tsarray. The source tsarray is not altered in any way.
+ * Receives the destination tsarray and the source tsarray. Appends a copy
+ * of all the objects in the source tsarray to the destination tsarray. The
+ * source tsarray is not altered in any way.
  *
  * The source and destination tsarrays may be the same; the tsarray will be
  * extended with a copy of its own values.
@@ -270,36 +299,41 @@ int tsarray_append(struct _tsarray_abs *p_tsarray, const void *object,
  * Returns zero in case of success, or a negative error value in case of
  * error.
  */
-int tsarray_extend(struct _tsarray_abs *p_tsarray_dest,
-        struct _tsarray_abs *p_tsarray_src, size_t obj_size)
+int tsarray_extend(struct _tsarray_pub *tsarray_dest,
+        struct _tsarray_pub *tsarray_src)
 {
-    const size_t dest_len = p_tsarray_dest->len;
-    const size_t src_len = p_tsarray_src->len;
+    struct _tsarray_priv *priv_dest = (struct _tsarray_priv *)tsarray_dest;
+    struct _tsarray_priv *priv_src = (struct _tsarray_priv *)tsarray_src;
+    const size_t obj_size = priv_src->obj_size;
+    const size_t dest_len = priv_dest->len;
+    const size_t src_len = priv_src->len;
     size_t new_len;
     int retval;
+
+    assert(priv_dest->obj_size == priv_src->obj_size);
 
     if (unlikely(!can_size_add(dest_len, src_len)))
         return TSARRAY_EOVERFLOW;
 
     new_len = dest_len + src_len;
 
-    retval = tsarray_resize(p_tsarray_dest, new_len, obj_size);
+    retval = tsarray_resize(priv_dest, new_len);
     if (unlikely(retval != 0))
         return retval;
 
-    assert(p_tsarray_dest->len <= p_tsarray_dest->_priv.capacity);
-    assert(p_tsarray_dest->len == dest_len + src_len);
-    assert(p_tsarray_dest->items != NULL);
+    assert(priv_dest->len <= priv_dest->capacity);
+    assert(priv_dest->len == dest_len + src_len);
+    assert(tsarray_dest->items != NULL);
 
-    /* XXX: Can we declare p_tsarray_src as pointer-to-const? Would be good
+    /* XXX: Can we declare tsarray_src as pointer-to-const? Would be good
      * for the API contract. But tsarray_resize() may change dest->items,
      * and if dest == src, that means src->items will change too. Compiler
      * might assume that src->items is never altered and reuse an old copy.
-     * Or might it? What are the pointer aliasing rules for differently
-     * qualified pointers? In any case, this is only really relevant to the
-     * set_items call, source arg. We _could_ just do something like
-     * dest != src ? src->items : dest->items. */
-    set_items(p_tsarray_dest->items, dest_len, p_tsarray_src->items, obj_size, src_len);
+     * Or might it? Pointers differing only in qualification are allowed to
+     * alias. In any case, this is only really relevant to the set_items
+     * call, source arg. We _could_ just do something like dest != src ?
+     * src->items : dest->items. */
+    set_items(tsarray_dest->items, dest_len, tsarray_src->items, obj_size, src_len);
 
     return 0;
 }
@@ -308,31 +342,33 @@ int tsarray_extend(struct _tsarray_abs *p_tsarray_dest,
 /*
  * Remove one item from a tsarray.
  *
- * Receives a tsarray, the index of the item to remove, and the size of the
- * array's objects. Removes the item with the specified index and compacts
- * the array, by moving back any items with higher indices.
+ * Receives a tsarray and the index of the item to remove. Removes the item
+ * with the specified index and compacts the array, by moving back any
+ * items with higher indices.
  *
  * Returns zero in case of success, or a negative error value otherwise.
  */
-int tsarray_remove(struct _tsarray_abs *p_tsarray, int index, size_t obj_size)
+int tsarray_remove(struct _tsarray_pub *tsarray, int index)
 {
-    const size_t old_len = p_tsarray->len;
+    struct _tsarray_priv *priv = (struct _tsarray_priv *)tsarray;
+    const size_t obj_size = priv->obj_size;
+    const size_t old_len = priv->len;
 
     if (unlikely(index >= old_len))
         return TSARRAY_ENOENT;
 
-    assert(old_len <= p_tsarray->_priv.capacity);
+    assert(old_len <= priv->capacity);
     assert(old_len <= SIZE_MAX / obj_size);
 
     if (index < old_len-1)
     {   /* there's data to the right, need to move it left */
         const size_t bytes_to_move = (old_len - index - 1)*obj_size;
-        char *item_to_rm = get_nth_item(p_tsarray->items, index, obj_size);
+        char *item_to_rm = get_nth_item(tsarray->items, index, obj_size);
 
         memmove(item_to_rm, item_to_rm+obj_size, bytes_to_move);
     }
 
-    return tsarray_resize(p_tsarray, old_len-1, obj_size);
+    return tsarray_resize(priv, old_len-1);
 }
 
 
@@ -343,18 +379,20 @@ int tsarray_remove(struct _tsarray_abs *p_tsarray, int index, size_t obj_size)
  * necessary. Failure to do so will result in memory leaks.
  *
  * After this operation, the tsarray will be deallocated and invalid. It
- * must not be used for anything.
+ * may not be used for anything.
  */
-void tsarray_free(struct _tsarray_abs *p_tsarray)
+void tsarray_free(struct _tsarray_pub *tsarray)
 {
     /* items == NULL if and only if capacity == 0 */
-    assert((p_tsarray->items == NULL) == (p_tsarray->_priv.capacity == 0));
-    assert(p_tsarray->len <= p_tsarray->_priv.capacity);
+    struct _tsarray_priv *priv = (struct _tsarray_priv *)tsarray;
 
-    if (p_tsarray->items != NULL)
-        free(p_tsarray->items);
+    assert((tsarray->items == NULL) == (priv->capacity == 0));
+    assert(priv->len <= priv->capacity);
 
-    free(p_tsarray);
+    if (tsarray->items != NULL)
+        free(tsarray->items);
+
+    free(priv);
 }
 
 
