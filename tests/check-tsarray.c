@@ -553,6 +553,50 @@ START_TEST(test_copy_empty)
 END_TEST
 
 
+/*
+ * Test setting items on a tsarray then removing something to the left.
+ *
+ * This test is an attempt to catch invalid instruction reordering -- where
+ * the compiler might reorder the checks to happen before the remove.
+ *
+ * This could happen if there is a pointer aliasing issue on our API, which
+ * causes the compiler to think that intarray_remove is not working on the
+ * same object that is being accessed by the checks.
+ */
+START_TEST(test_set_then_move)
+{
+    static const int src[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+    intarray *const b = intarray_from_array(src, sizeof(src) / sizeof(src[0]));
+    int remove_result;
+
+    b->items[7] = -7;
+    b->items[8] = -8;
+
+    remove_result = intarray_remove(b, 6);
+
+    /* this check should always fail, since remove moves the items around */
+    if (b->items[8] == -8)
+    {   /* should never enter this; we've been reordered */
+        b->items[9] = 99;
+    }
+
+    /* remove was successful */
+    ck_assert_int_eq(remove_result, 0);
+
+    /* value was moved to the left */
+    ck_assert_int_ne(b->items[7], -7);
+    ck_assert_int_ne(b->items[8], -8);
+    ck_assert_int_eq(b->items[6], -7);
+    ck_assert_int_eq(b->items[7], -8);
+
+    /* did not enter impossible if */
+    ck_assert_int_ne(b->items[9], 99);
+
+    intarray_free(b);
+}
+END_TEST
+
+
 Suite *tsarray_suite(void)
 {
     Suite *s;
@@ -583,6 +627,7 @@ Suite *tsarray_suite(void)
     tcase_add_test(tc_ops, test_extend_empty);
     tcase_add_test(tc_ops, test_extend_self_one);
     tcase_add_test(tc_ops, test_extend_self_large);
+    tcase_add_test(tc_ops, test_set_then_move);
 
     suite_add_tcase(s, tc_ops);
 
