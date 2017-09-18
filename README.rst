@@ -1,7 +1,7 @@
 tsarray
 =======
 
-|License|
+|License| |Build Status|
 
 Generic type-safe dynamic array library for C.
 
@@ -121,3 +121,5 @@ along with tsarray.  If not, see <http://www.gnu.org/licenses/>.
 
 .. |License| image:: https://img.shields.io/badge/license-GPLv3+-blue.svg?maxAge=2592000
    :target: COPYING
+.. |Build Status| image:: https://travis-ci.org/israel-lugo/tsarray.svg?branch=master
+   :target: https://travis-ci.org/israel-lugo/tsarray
