@@ -43,8 +43,8 @@ Usage
 The ``TSARRAY_TYPEDEF(arraytype, objtype)`` macro will define (typedef) a new
 type ``arraytype`` and all the type-specific manipulator functions. These
 functions are named with the prefix ``arraytype_*``, e.g.
-``intarray_append()``, etc.  They work with objects of the specified
-``objtype``.
+``intarray_append()``, ``intarray_len()``, etc.  They work with objects of the
+specified ``objtype``.
 
 For example, the code ``TSARRAY_TYPEDEF(intarray, int);`` will declare a new
 type ``intarray``, which is a tsarray that holds objects of type ``int``. It
@@ -69,14 +69,14 @@ Example
         intarray_append(a1, &a);
         intarray_append(a1, &b);
 
-        printf("a1->len: %lu\n", a1->len);
+        printf("len(a1): %lu\n", intarray_len(a1));
         printf("a1[0]: %d\n", a1->items[0]);
         printf("a1[1]: %d\n", a1->items[1]);
 
         puts("Removing a[0]...");
         intarray_remove(a1, 0);
 
-        printf("a1->len: %lu\n", a1->len);
+        printf("len(a1): %lu\n", intarray_len(a1));
         printf("a1[0]: %d\n", a1->items[0]);
 
         intarray_free(a1);
@@ -84,11 +84,11 @@ Example
 
 Given the above code, calling ``f(31, 42)`` would produce the following output::
 
-  a1->len: 2
+  len(a1): 2
   a1[0]: 31
   a1[1]: 42
   Removing a[0]...
-  a1->len: 1
+  len(a1): 1
   a1[0]: 42
 
 

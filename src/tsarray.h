@@ -57,53 +57,31 @@ enum tsarray_errno {
 };
 
 
-/* Private metadata for the tsarray. For internal use only. */
-struct _tsarray_metadata {
-    size_t capacity;
-};
-
-
 /* Abstract version; only for internal use (must match the subclassed
  * versions in TSARRAY_TYPEDEF) */
-struct _tsarray_abs {
-    size_t len;
-    void *items;    /* placeholder */
-    struct _tsarray_metadata _priv;
+struct _tsarray_pub {
+    char *items;    /* char may alias any other type (C99 6.5.2.3) */
 };
 
 
-/*
- * TODO: We can actually hide the _priv field from the user, with some pointer
- * magic. Create an internal-only struct _tsarray_desc with all the internal
- * fields we want, and the last field is the publicly accessible struct
- * _tsarray_abs (which only has user-visible fields). We'll need a constructor
- * to create tsarrays. The constructor will internally create a _tsarray_desc,
- * but will only return a pointer to the public struct _tsarray_abs within it.
- * All public functions receive that pointer, it's the only thing the user
- * ever knows. Internally, whenever we want to access the containing struct
- * _tsarray_desc of a given struct _tsarray_abs, we use offsetof() pointer
- * arithmetic to calculate the container address.
- */
+struct _tsarray_pub *tsarray_new(size_t obj_size) __ATTR_MALLOC;
 
-
-struct _tsarray_abs *tsarray_new(void) __ATTR_MALLOC;
-
-struct _tsarray_abs *tsarray_from_array(const void *src, size_t src_len,
+struct _tsarray_pub *tsarray_from_array(const void *src, size_t src_len,
         size_t obj_size) __ATTR_MALLOC;
 
-struct _tsarray_abs *tsarray_copy(const struct _tsarray_abs *p_tsarray_src,
-        size_t obj_size) __NON_NULL __ATTR_MALLOC;
+struct _tsarray_pub *tsarray_copy(const struct _tsarray_pub *tsarray_src)
+    __NON_NULL __ATTR_MALLOC;
 
-int tsarray_append(struct _tsarray_abs *p_tsarray, const void *object,
-        size_t obj_size) __NON_NULL;
+size_t tsarray_len(const struct _tsarray_pub *tsarray) __ATTR_CONST __NON_NULL;
 
-int tsarray_extend(struct _tsarray_abs *p_tsarray_dest,
-        struct _tsarray_abs *p_tsarray_src, size_t obj_size) __NON_NULL;
+int tsarray_append(struct _tsarray_pub *tsarray, const void *object) __NON_NULL;
 
-int tsarray_remove(struct _tsarray_abs *p_tsarray, int index,
-        size_t obj_size) __NON_NULL;
+int tsarray_extend(struct _tsarray_pub *tsarray_dest,
+        struct _tsarray_pub *tsarray_src) __NON_NULL;
 
-void tsarray_free(struct _tsarray_abs *p_tsarray) __NON_NULL;
+int tsarray_remove(struct _tsarray_pub *p_tsarray, int index) __NON_NULL;
+
+void tsarray_free(struct _tsarray_pub *p_tsarray) __NON_NULL;
 
 
 /*
@@ -117,36 +95,32 @@ void tsarray_free(struct _tsarray_abs *p_tsarray) __NON_NULL;
  *      TSARRAY_TYPEDEF(intarray, int);
  */
 #define TSARRAY_TYPEDEF(arraytype, objtype) \
-    typedef struct { \
-        size_t len; \
-        objtype *items; \
-        struct _tsarray_metadata _priv; \
-    } arraytype; \
+    typedef struct { objtype *items; } arraytype; \
     static inline arraytype *arraytype##_new(void) { \
-        return (arraytype *)tsarray_new(); \
+        return (arraytype *)tsarray_new(sizeof(objtype)); \
     } \
     static inline arraytype *arraytype##_from_array(const void *src, \
             size_t src_len) { \
         return (arraytype *)tsarray_from_array(src, src_len, sizeof(objtype)); \
     } \
     static inline arraytype *arraytype##_copy(const arraytype *array) { \
-        return (arraytype *)tsarray_copy((const struct _tsarray_abs *)array, \
-                sizeof(objtype)); \
+        return (arraytype *)tsarray_copy((const struct _tsarray_pub *)array); \
+    } \
+    static inline size_t arraytype##_len(const arraytype *array) { \
+        return tsarray_len((const struct _tsarray_pub *)array); \
     } \
     static inline int arraytype##_append(arraytype *array, objtype *object) { \
-        return tsarray_append((struct _tsarray_abs *)array, object, \
-                sizeof(objtype)); \
+        return tsarray_append((struct _tsarray_pub *)array, object); \
     } \
     static inline int arraytype##_extend(arraytype *dest, arraytype *src) { \
-        return tsarray_extend((struct _tsarray_abs *)dest, \
-                (struct _tsarray_abs *)src, sizeof(objtype)); \
+        return tsarray_extend((struct _tsarray_pub *)dest, \
+                (struct _tsarray_pub *)src); \
     } \
     static inline int arraytype##_remove(arraytype *array, size_t index) { \
-        return tsarray_remove((struct _tsarray_abs *)array, index, \
-                sizeof(objtype)); \
+        return tsarray_remove((struct _tsarray_pub *)array, index); \
     } \
     static inline void arraytype##_free(arraytype *array) { \
-        tsarray_free((struct _tsarray_abs *)array); \
+        tsarray_free((struct _tsarray_pub *)array); \
     }
 
 
