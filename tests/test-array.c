@@ -25,17 +25,17 @@ intarray *a2;
 
 static void _print_array(const intarray *a, const char *name)
 {
-    struct _tsarray_priv *priv = (struct _tsarray_priv *)a;
+    const size_t len = intarray_len(a);
     int i;
 
-    for (i=0; i < priv->len; i++)
+    for (i=0; i < len; i++)
         printf("%s[%d] = %d\n", name, i, a->items[i]);
 }
 
 static void _print_array_stats(const intarray *a, const char *name)
 {
     struct _tsarray_priv *priv = (struct _tsarray_priv *)a;
-    printf("%s- len: %lu, capacity: %lu\n", name, priv->len, priv->capacity);
+    printf("%s- len: %lu, capacity: %lu\n", name, intarray_len(a), priv->capacity);
 }
 
 #define print_array(a) _print_array(a, #a)
