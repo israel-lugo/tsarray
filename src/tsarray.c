@@ -445,7 +445,7 @@ static void set_items(void *items, size_t index, const void *objects,
     assert(((char *)objects < dest && (char *)objects+bytes <= dest)
            || (dest < (char *)objects && dest+bytes <= (char *)objects));
 
-    memcpy(dest, objects, obj_size*count);
+    memcpy(dest, objects, bytes);
 }
 
 
