@@ -79,6 +79,9 @@ int tsarray_append(struct _tsarray_pub *tsarray, const void *object) __NON_NULL;
 int tsarray_extend(struct _tsarray_pub *tsarray_dest,
         struct _tsarray_pub *tsarray_src) __NON_NULL;
 
+struct _tsarray_pub *tsarray_slice(const struct _tsarray_pub *p_tsarray,
+        size_t start, size_t stop, size_t step) __NON_NULL __ATTR_MALLOC;
+
 int tsarray_remove(struct _tsarray_pub *p_tsarray, int index) __NON_NULL;
 
 void tsarray_free(struct _tsarray_pub *p_tsarray) __NON_NULL;
@@ -118,6 +121,11 @@ void tsarray_free(struct _tsarray_pub *p_tsarray) __NON_NULL;
     } \
     static inline int arraytype##_remove(arraytype *array, size_t index) { \
         return tsarray_remove((struct _tsarray_pub *)array, index); \
+    } \
+    static inline arraytype *arraytype##_slice(const arraytype *array, \
+            size_t start, size_t stop, size_t step) { \
+        return (arraytype *)tsarray_slice((const struct _tsarray_pub *)array, \
+                start, stop, step); \
     } \
     static inline void arraytype##_free(arraytype *array) { \
         tsarray_free((struct _tsarray_pub *)array); \

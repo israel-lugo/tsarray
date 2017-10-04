@@ -264,6 +264,13 @@ struct _tsarray_pub *tsarray_copy(const struct _tsarray_pub *src_tsarray)
 }
 
 
+struct _tsarray_pub *tsarray_slice(const struct _tsarray_pub *p_tsarray,
+        size_t start, size_t stop, size_t step)
+{
+    return NULL;
+}
+
+
 /*
  * Append an object to the end of a tsarray.
  *
