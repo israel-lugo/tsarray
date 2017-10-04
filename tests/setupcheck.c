@@ -99,4 +99,23 @@ TCase *tcase_with_a1_create(const char *name)
 }
 
 
+/*
+ * Run the tests in a Suite, and return the number of failed tests.
+ *
+ * The number of failed tests also includes test errors.
+ */
+int run_tests(Suite *s)
+{
+    SRunner *sr = srunner_create(s);
+    int number_failed;
+
+    srunner_run_all(sr, CK_VERBOSE);
+    number_failed = srunner_ntests_failed(sr);
+
+    srunner_free(sr);
+
+    return number_failed;
+}
+
+
 /* vim: set expandtab smarttab shiftwidth=4 softtabstop=4 tw=75 : */

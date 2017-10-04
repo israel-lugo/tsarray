@@ -49,6 +49,7 @@ extern intarray *a1;
 
 void append_seq_checked(intarray *a, int start, int stop);
 TCase *tcase_with_a1_create(const char *name);
+int run_tests(Suite *s);
 
 
 #endif  /* _SETUPCHECK_H */
