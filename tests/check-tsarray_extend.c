@@ -178,19 +178,19 @@ END_TEST
 Suite *tsarray_suite(void)
 {
     Suite *s;
-    TCase *tc_ops;
+    TCase *tc;
 
     s = suite_create("tsarray_extend");
 
-    tc_ops = tcase_with_a1_create("extend");
+    tc = tcase_with_a1_create("extend");
 
-    tcase_add_test(tc_ops, test_extend);
-    tcase_add_test(tc_ops, test_extend_with_empty);
-    tcase_add_test(tc_ops, test_extend_empty);
-    tcase_add_test(tc_ops, test_extend_self_one);
-    tcase_add_test(tc_ops, test_extend_self_large);
+    tcase_add_test(tc, test_extend);
+    tcase_add_test(tc, test_extend_with_empty);
+    tcase_add_test(tc, test_extend_empty);
+    tcase_add_test(tc, test_extend_self_one);
+    tcase_add_test(tc, test_extend_self_large);
 
-    suite_add_tcase(s, tc_ops);
+    suite_add_tcase(s, tc);
 
     return s;
 }

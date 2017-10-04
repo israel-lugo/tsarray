@@ -104,17 +104,17 @@ END_TEST
 Suite *tsarray_suite(void)
 {
     Suite *s;
-    TCase *tc_ops;
+    TCase *tc;
 
     s = suite_create("tsarray_append");
 
-    tc_ops = tcase_with_a1_create("append");
+    tc = tcase_with_a1_create("append");
 
-    tcase_add_test(tc_ops, test_append_one);
-    tcase_add_test(tc_ops, test_append_many);
-    tcase_add_test(tc_ops, test_append_overflow);
+    tcase_add_test(tc, test_append_one);
+    tcase_add_test(tc, test_append_many);
+    tcase_add_test(tc, test_append_overflow);
 
-    suite_add_tcase(s, tc_ops);
+    suite_add_tcase(s, tc);
 
     return s;
 }
