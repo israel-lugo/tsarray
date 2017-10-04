@@ -23,6 +23,8 @@
 # Executables
 tests/check-internal
 tests/check-tsarray
+tests/check-tsarray_remove
+tests/check-tsarray_extend
 tests/test-array
 tests/test-sparse
 tests/test2-sparse
