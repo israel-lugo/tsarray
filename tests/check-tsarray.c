@@ -83,7 +83,7 @@ static void append_seq_checked(intarray *a, int start, int stop)
  *
  * To be used as the setup for a checked test fixture.
  */
-void new_array(void)
+void new_a1_array(void)
 {
     a1 = intarray_new();
     ck_assert_ptr_ne(a1, NULL);
@@ -95,7 +95,7 @@ void new_array(void)
  *
  * To be used as the teardown for a checked test fixture.
  */
-void del_array(void)
+void del_a1_array(void)
 {
     struct _tsarray_priv *priv = (struct _tsarray_priv *)a1;
     ck_assert_int_eq((a1->items == NULL), (priv->capacity == 0));
@@ -606,7 +606,7 @@ Suite *tsarray_suite(void)
 
     tc_ops = tcase_create("operations");
 
-    tcase_add_checked_fixture(tc_ops, new_array, del_array);
+    tcase_add_checked_fixture(tc_ops, new_a1_array, del_a1_array);
     tcase_add_test(tc_ops, test_create_and_free);
     tcase_add_test(tc_ops, test_len_empty);
     tcase_add_test(tc_ops, test_from_array);
