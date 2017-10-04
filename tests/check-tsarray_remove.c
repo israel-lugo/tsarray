@@ -166,7 +166,7 @@ Suite *tsarray_suite(void)
     Suite *s;
     TCase *tc;
 
-    s = suite_create("tsarray");
+    s = suite_create("tsarray_remove");
 
     tc = tcase_with_a1_create("remove");
 

@@ -180,7 +180,7 @@ Suite *tsarray_suite(void)
     Suite *s;
     TCase *tc_ops;
 
-    s = suite_create("tsarray");
+    s = suite_create("tsarray_extend");
 
     tc_ops = tcase_with_a1_create("extend");
 
