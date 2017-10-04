@@ -1,6 +1,6 @@
 
 # programs built only with "make check"; don't include in "make all"
-check_PROGRAMS = check-internal check-tsarray check-tsarray_remove check-tsarray_extend test-array test-sparse
+check_PROGRAMS = check-internal check-tsarray check-tsarray_append check-tsarray_remove check-tsarray_extend test-array test-sparse
 
 # run these programs as tests when doing "make check"
 TESTS = $(check_PROGRAMS)
@@ -20,6 +20,10 @@ check_internal_LDADD = @CHECK_LIBS@
 check_tsarray_SOURCES = check-tsarray.c $(tsarray_common_sources)
 check_tsarray_CFLAGS = $(tsarray_common_cflags)
 check_tsarray_LDADD = $(tsarray_common_ldadd)
+
+check_tsarray_append_SOURCES = check-tsarray_append.c $(tsarray_common_sources)
+check_tsarray_append_CFLAGS = $(tsarray_common_cflags)
+check_tsarray_append_LDADD = $(tsarray_common_ldadd)
 
 check_tsarray_remove_SOURCES = check-tsarray_remove.c $(tsarray_common_sources)
 check_tsarray_remove_CFLAGS = $(tsarray_common_cflags)
