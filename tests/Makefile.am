@@ -9,11 +9,13 @@ AM_CFLAGS = -I$(top_srcdir)/src
 
 libs_path = $(top_builddir)/src/.libs
 
+tsarray_common_sources = setupcheck.c setupcheck.h 
+
 check_internal_SOURCES = check-internal.c $(top_builddir)/src/common.h
 check_internal_CFLAGS = $(AM_CFLAGS) @CHECK_CFLAGS@
 check_internal_LDADD = @CHECK_LIBS@
 
-check_tsarray_SOURCES = check-tsarray.c $(top_builddir)/src/tsarray.h
+check_tsarray_SOURCES = check-tsarray.c $(tsarray_common_sources) $(top_builddir)/src/tsarray.h
 check_tsarray_CFLAGS = $(AM_CFLAGS) @CHECK_CFLAGS@
 check_tsarray_LDADD = $(libs_path)/libtsarray.la @CHECK_LIBS@
 

@@ -33,74 +33,8 @@
 
 #include <tsarray.h>
 
+#include "setupcheck.h"
 
-/*
- * Copied here from src/tsarray.c. This is internal use only. Must keep in
- * sync with the definition in src/tsarray.c.
- */
-struct _tsarray_priv {
-    struct _tsarray_pub pub;
-    size_t obj_size;
-    size_t capacity;
-    size_t len;
-};
-
-
-TSARRAY_TYPEDEF(intarray, int);
-
-intarray *a1 = NULL;
-
-
-/*
- * Append a sequence of ints to the specified intarray and perform checks.
- *
- * The sequence of ints ranges from start (inclusive) to stop (exclusive).
- *
- * Useful to fill arrays with junk inside unit tests. Checks the result,
- * length, capacity, and that the correct item was appended. Will fail the
- * test if any of these checks fail.
- */
-static void append_seq_checked(intarray *a, int start, int stop)
-{
-    struct _tsarray_priv *priv = (struct _tsarray_priv *)a;
-    int i;
-
-    for (i=start; i<stop; i++)
-    {
-        const size_t old_len = priv->len;
-        int append_result = intarray_append(a, &i);
-        ck_assert_int_eq(append_result, 0);
-
-        ck_assert_uint_eq(priv->len, old_len+1);
-        ck_assert_uint_ge(priv->capacity, priv->len);
-        ck_assert_int_eq(a->items[old_len], i);
-    }
-}
-
-
-/*
- * Create a new intarray and make a1 point to it.
- *
- * To be used as the setup for a checked test fixture.
- */
-void new_a1_array(void)
-{
-    a1 = intarray_new();
-    ck_assert_ptr_ne(a1, NULL);
-}
-
-
-/*
- * Free the a1 intarray.
- *
- * To be used as the teardown for a checked test fixture.
- */
-void del_a1_array(void)
-{
-    struct _tsarray_priv *priv = (struct _tsarray_priv *)a1;
-    ck_assert_int_eq((a1->items == NULL), (priv->capacity == 0));
-    intarray_free(a1);
-}
 
 
 /*
@@ -604,9 +538,8 @@ Suite *tsarray_suite(void)
 
     s = suite_create("tsarray");
 
-    tc_ops = tcase_create("operations");
+    tc_ops = tcase_with_a1_create("operations");
 
-    tcase_add_checked_fixture(tc_ops, new_a1_array, del_a1_array);
     tcase_add_test(tc_ops, test_create_and_free);
     tcase_add_test(tc_ops, test_len_empty);
     tcase_add_test(tc_ops, test_from_array);
