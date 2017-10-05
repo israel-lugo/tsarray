@@ -294,6 +294,33 @@ START_TEST(test_slice_past_many)
 END_TEST
 
 
+/*
+ * Test slicing all items from a tsarray with a negative step.
+ */
+START_TEST(test_slice_all_reverse)
+{
+    const int stop = 100;
+    intarray *aslice;
+    int i;
+
+    append_seq_checked(a1, 0, stop);
+
+    aslice = intarray_slice(a1, stop, 0, -1);
+
+    /* aslice was successfully created and is not the same as a1 */
+    ck_assert_ptr_ne(aslice, NULL);
+    ck_assert_ptr_ne(aslice, a1);
+
+    ck_assert_uint_eq(intarray_len(aslice), intarray_len(a1));
+
+    for (i=0; i<stop; i++)
+        ck_assert_int_eq(aslice->items[i], a1->items[stop-i-1]);
+
+    intarray_free(aslice);
+}
+END_TEST
+
+
 Suite *tsarray_suite(void)
 {
     Suite *s;
@@ -313,6 +340,7 @@ Suite *tsarray_suite(void)
     tcase_add_test(tc, test_slice_all);
     tcase_add_test(tc, test_slice_all_past_one);
     tcase_add_test(tc, test_slice_past_many);
+    tcase_add_test(tc, test_slice_all_reverse);
 
     suite_add_tcase(s, tc);
 
