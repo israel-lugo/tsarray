@@ -162,6 +162,34 @@ END_TEST
 
 
 /*
+ * Test creating a slice with a step larger than the slice range.
+ *
+ * Makes sure the slice contains the first item and nothing else.
+ */
+START_TEST(test_slice_step_too_large)
+{
+    const int stop = 100;
+    const size_t slice_start = 14;
+    const size_t slice_stop = 50;
+    intarray *aslice;
+
+    append_seq_checked(a1, 0, stop);
+
+    aslice = intarray_slice(a1, slice_start, slice_stop, slice_stop-slice_start);
+
+    /* aslice was successfully created and is not the same as a1 */
+    ck_assert_ptr_ne(aslice, NULL);
+    ck_assert_ptr_ne(aslice, a1);
+
+    ck_assert_uint_eq(intarray_len(aslice), 1);
+    ck_assert_int_eq(aslice->items[0], a1->items[slice_start]);
+
+    intarray_free(aslice);
+}
+END_TEST
+
+
+/*
  * Test creating an empty slice from a non-empty tsarray.
  */
 START_TEST(test_slice_none)
@@ -174,31 +202,6 @@ START_TEST(test_slice_none)
 
     /* aslice = a1[sliceidx:sliceidx] */
     aslice = intarray_slice(a1, sliceidx, sliceidx, 1);
-
-    /* aslice was successfully created and is not the same as a1 */
-    ck_assert_ptr_ne(aslice, NULL);
-    ck_assert_ptr_ne(aslice, a1);
-
-    ck_assert_uint_eq(intarray_len(aslice), 0);
-
-    intarray_free(aslice);
-}
-END_TEST
-
-
-/*
- * Test creating an empty slice through a large step.
- */
-START_TEST(test_slice_none_step)
-{
-    const int stop = 10;
-    const size_t sliceidx = 4;
-    intarray *aslice;
-
-    append_seq_checked(a1, 0, stop);
-
-    /* aslice = a1[sliceidx:sliceidx+1:3], must be empty */
-    aslice = intarray_slice(a1, sliceidx, sliceidx+1, 3);
 
     /* aslice was successfully created and is not the same as a1 */
     ck_assert_ptr_ne(aslice, NULL);
@@ -365,8 +368,8 @@ Suite *tsarray_suite(void)
     tcase_add_test(tc, test_slice_one);
     tcase_add_test(tc, test_slice_some);
     tcase_add_test(tc, test_slice_some_step);
+    tcase_add_test(tc, test_slice_step_too_large);
     tcase_add_test(tc, test_slice_none);
-    tcase_add_test(tc, test_slice_none_step);
     tcase_add_test(tc, test_slice_start_past_stop);
     tcase_add_test(tc, test_slice_from_empty);
     tcase_add_test(tc, test_slice_none_from_empty);
