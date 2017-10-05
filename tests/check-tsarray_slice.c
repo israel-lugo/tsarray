@@ -241,17 +241,22 @@ END_TEST
 /*
  * Test slicing from an empty tsarray.
  *
- * Makes sure slicing fails, as we can't slice something that's not there.
+ * Makes sure the resulting slice is empty.
  */
-START_TEST(test_slice_empty)
+START_TEST(test_slice_from_empty)
 {
     intarray *aslice;
 
-    /* aslice = a1[0:1:1] */
+    /* a1 = []; aslice = a1[0:1:1] */
     aslice = intarray_slice(a1, 0, 1, 1);
 
-    /* make sure it fails (we should have some kind of errno-equivalent) */
-    ck_assert_ptr_eq(aslice, NULL);
+    /* aslice was successfully created and is not the same as a1 */
+    ck_assert_ptr_ne(aslice, NULL);
+    ck_assert_ptr_ne(aslice, a1);
+
+    ck_assert_uint_eq(intarray_len(aslice), 0);
+
+    intarray_free(aslice);
 }
 END_TEST
 
@@ -363,7 +368,7 @@ Suite *tsarray_suite(void)
     tcase_add_test(tc, test_slice_none);
     tcase_add_test(tc, test_slice_none_step);
     tcase_add_test(tc, test_slice_start_past_stop);
-    tcase_add_test(tc, test_slice_empty);
+    tcase_add_test(tc, test_slice_from_empty);
     tcase_add_test(tc, test_slice_none_from_empty);
     tcase_add_test(tc, test_slice_all);
     tcase_add_test(tc, test_slice_all_past_one);
