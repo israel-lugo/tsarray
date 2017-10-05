@@ -59,7 +59,7 @@ static void check_slice_past_n(size_t src_len, size_t slice_start, size_t past)
 
     append_seq_checked(a1, start, stop);
 
-    aslice = intarray_slice(a1, slice_start, stop+past, 1);
+    aslice = intarray_slice(a1, slice_start, intarray_len(a1)+past, 1);
 
     /* aslice was successfully created and is not the same as a1 */
     ck_assert_ptr_ne(aslice, NULL);
