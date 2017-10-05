@@ -212,7 +212,7 @@ END_TEST
 
 
 /*
- * Test slicing with start > stop and positie step.
+ * Test slicing with start > stop and positive step.
  *
  * Makes sure the slice is empty.
  */
