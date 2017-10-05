@@ -83,6 +83,12 @@ struct _tsarray_priv {
 #define MIN_USAGE_RATIO 2
 
 
+static struct _tsarray_pub *tsarray_slice_forward(const struct _tsarray_pub *src_tsarray,
+        size_t start, size_t stop, int step) __NON_NULL __ATTR_MALLOC;
+
+static struct _tsarray_pub *tsarray_slice_backwards(const struct _tsarray_pub *src_tsarray,
+        size_t start, size_t stop, int step) __NON_NULL __ATTR_MALLOC;
+
 static inline void *get_nth_item(const void *items, size_t index,
         size_t obj_size) __ATTR_CONST __NON_NULL;
 
@@ -264,9 +270,58 @@ struct _tsarray_pub *tsarray_copy(const struct _tsarray_pub *src_tsarray)
 }
 
 
-struct _tsarray_pub *tsarray_slice(const struct _tsarray_pub *p_tsarray,
-        size_t start, size_t stop, size_t step)
+/*
+ * Create a tsarray as a slice of an existing tsarray.
+ *
+ * Receives the source tsarray, the slice start and stop indexes, and the
+ * step value.
+ *
+ * Returns a pointer to the newly created tsarray, or NULL in case of
+ * error.
+ */
+struct _tsarray_pub *tsarray_slice(const struct _tsarray_pub *src_tsarray,
+        size_t start, size_t stop, int step)
 {
+    if (step > 0)
+        return tsarray_slice_forward(src_tsarray, start, stop, step);
+    else if (step < 0)
+        return tsarray_slice_backwards(src_tsarray, start, stop, step);
+
+    /* zero step makes no sense */
+    return NULL;
+}
+
+
+static struct _tsarray_pub *tsarray_slice_forward(const struct _tsarray_pub *src_tsarray,
+        size_t start, size_t stop, int step)
+{
+    const struct _tsarray_priv *src_priv = (const struct _tsarray_priv *)src_tsarray;
+    const size_t obj_size = src_priv->obj_size;
+    assert(src_priv->len <= src_priv->capacity);
+
+    /* shortcircuit empty cases, avoid undefined behavior below */
+    if (start >= stop || start >= src_priv->len)
+        return tsarray_new(obj_size);
+
+    /* optimize for the simple case: straightforward cut */
+    if (step == 1)
+    {
+        const char *first = get_nth_item(src_tsarray->items, start, obj_size);
+        /* we know start < src_priv->len because we shortcircuited above */
+        const size_t slice_len = min(stop, src_priv->len) - start;
+
+        return tsarray_from_array(first, slice_len, obj_size);
+    }
+
+    /* TODO */
+    return NULL;
+}
+
+
+static struct _tsarray_pub *tsarray_slice_backwards(const struct _tsarray_pub *src_tsarray,
+        size_t start, size_t stop, int step)
+{
+    /* TODO */
     return NULL;
 }
 
