@@ -92,6 +92,8 @@ static struct _tsarray_pub *tsarray_slice_backwards(const struct _tsarray_pub *s
 static inline void *get_nth_item(const void *items, size_t index,
         size_t obj_size) __ATTR_CONST __NON_NULL;
 
+static int tsarray_resize(struct _tsarray_priv *priv, size_t new_len) __NON_NULL;
+
 static void set_items(void *items, size_t index, const void *objects,
         size_t obj_size, size_t count);
 
@@ -124,6 +126,33 @@ struct _tsarray_pub *tsarray_new(size_t obj_size)
     priv->len = 0;
 
     return &priv->pub;
+}
+
+
+/*
+ * Create a new tsarray of the specified length.
+ *
+ * For internal use only. Receives the size of the array's items, and the
+ * desired array length. Returns the private tsarray descriptor of newly
+ * created tsarray that contains the specified amount of uninitialized
+ * items. In case of error, returns NULL.
+ */
+static struct _tsarray_priv *tsarray_new_of_len(size_t obj_size, size_t len)
+{
+    struct _tsarray_priv *priv = (struct _tsarray_priv *)tsarray_new(obj_size);
+    int retval;
+
+    if (unlikely(priv == NULL))
+        return NULL;
+
+    retval = tsarray_resize(priv, len);
+    if (unlikely(retval != 0))
+    {
+        tsarray_free((struct _tsarray_pub *)priv);
+        return NULL;
+    }
+
+    return priv;
 }
 
 
@@ -213,12 +242,11 @@ static int tsarray_resize(struct _tsarray_priv *priv, size_t new_len)
 struct _tsarray_pub *tsarray_from_array(const void *src, size_t src_len,
         size_t obj_size)
 {
-    struct _tsarray_pub *pub = tsarray_new(obj_size);
-    struct _tsarray_priv *priv;
-    int retval;
+    struct _tsarray_priv *priv = tsarray_new_of_len(obj_size, src_len);
+    struct _tsarray_pub *pub = (struct _tsarray_pub *)priv;
 
     /* pass the error up */
-    if (unlikely(pub == NULL))
+    if (unlikely(priv == NULL))
         return NULL;
 
     /* empty source array means empty tsarray */
@@ -227,15 +255,8 @@ struct _tsarray_pub *tsarray_from_array(const void *src, size_t src_len,
 
     if (src == NULL)
     {   /* invalid args: src = NULL and src_len != 0 */
-        goto _free_and_error;
-    }
-
-    priv = (struct _tsarray_priv *)pub;
-
-    retval = tsarray_resize(priv, src_len);
-    if (unlikely(retval != 0))
-    {   /* rollback and error out */
-        goto _free_and_error;
+        tsarray_free(pub);
+        return NULL;
     }
 
     assert(priv->len == src_len);
@@ -244,10 +265,6 @@ struct _tsarray_pub *tsarray_from_array(const void *src, size_t src_len,
     memcpy(pub->items, src, src_len*obj_size);
 
     return pub;
-
-_free_and_error:
-    tsarray_free(pub);
-    return NULL;
 }
 
 
