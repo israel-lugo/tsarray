@@ -320,18 +320,31 @@ static struct _tsarray_pub *tsarray_slice_forward(const struct _tsarray_pub *src
     if (start >= stop || start >= src_priv->len)
         return tsarray_new(obj_size);
 
-    /* optimize for the simple case: straightforward cut */
     if (step == 1)
-    {
+    {   /* simple case: straightforward cut */
         const char *first = get_nth_item(src_tsarray->items, start, obj_size);
         /* we know start < src_priv->len because we shortcircuited above */
         const size_t slice_len = min(stop, src_priv->len) - start;
 
         return tsarray_from_array(first, slice_len, obj_size);
     }
+    else
+    {   /* stepping over items */
+        assert(stop > start);
+        const size_t slice_len = 1 + ((stop - start - 1)/step);
+        struct _tsarray_priv *slice_priv = _tsarray_new_of_len(obj_size, slice_len);
 
-    /* TODO */
-    return NULL;
+        for (size_t i=0; i<slice_len; i++)
+        {
+            const char *src = get_nth_item(src_tsarray->items, start + i*step, obj_size);
+            char *dest = get_nth_item(slice_priv->pub.items, i, obj_size);
+
+            memcpy(dest, src, obj_size);
+        }
+
+        return &slice_priv->pub;
+    }
+    /* UNREACHABLE */
 }
 
 
