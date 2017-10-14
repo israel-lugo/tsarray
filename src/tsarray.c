@@ -137,7 +137,7 @@ struct _tsarray_pub *tsarray_new(size_t obj_size)
  * created tsarray that contains the specified amount of uninitialized
  * items. In case of error, returns NULL.
  */
-static struct _tsarray_priv *tsarray_new_of_len(size_t obj_size, size_t len)
+static struct _tsarray_priv *_tsarray_new_of_len(size_t obj_size, size_t len)
 {
     struct _tsarray_priv *priv = (struct _tsarray_priv *)tsarray_new(obj_size);
     int retval;
@@ -242,7 +242,7 @@ static int tsarray_resize(struct _tsarray_priv *priv, size_t new_len)
 struct _tsarray_pub *tsarray_from_array(const void *src, size_t src_len,
         size_t obj_size)
 {
-    struct _tsarray_priv *priv = tsarray_new_of_len(obj_size, src_len);
+    struct _tsarray_priv *priv = _tsarray_new_of_len(obj_size, src_len);
     struct _tsarray_pub *pub = (struct _tsarray_pub *)priv;
 
     /* pass the error up */
