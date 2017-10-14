@@ -243,7 +243,7 @@ struct _tsarray_pub *tsarray_from_array(const void *src, size_t src_len,
         size_t obj_size)
 {
     struct _tsarray_priv *priv = _tsarray_new_of_len(obj_size, src_len);
-    struct _tsarray_pub *pub = (struct _tsarray_pub *)priv;
+    struct _tsarray_pub *pub = &priv->pub;
 
     /* pass the error up */
     if (unlikely(priv == NULL))
