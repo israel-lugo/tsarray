@@ -69,9 +69,14 @@
     __typeof__(y) _y = (y); \
     _x > _y ? _x : _y;  \
   })
+#  define _abs(x) ({    \
+    __typeof__(x) _x = (x); \
+    _x < 0 ? -_x : _x;  \
+  })
 #else   /* not gcc */
 #  define min(x, y) ((x) < (y) ? (x) : (y))
 #  define max(x, y) ((x) > (y) ? (x) : (y))
+#  define _abs(x) ((x) < 0 ? -(x) : (x))
 #endif  /* not gcc */
 
 
