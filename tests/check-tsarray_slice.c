@@ -242,6 +242,33 @@ END_TEST
 
 
 /*
+ * Test slicing with start < stop and negative step.
+ *
+ * Makes sure the slice is empty.
+ */
+START_TEST(test_slice_back_start_before_stop)
+{
+    const int stop = 10;
+    const size_t slice_start = 3;
+    const size_t slice_stop = 7;
+    intarray *aslice;
+
+    append_seq_checked(a1, 0, stop);
+
+    aslice = intarray_slice(a1, slice_start, slice_stop, -1);
+
+    /* aslice was successfully created and is not the same as a1 */
+    ck_assert_ptr_ne(aslice, NULL);
+    ck_assert_ptr_ne(aslice, a1);
+
+    ck_assert_uint_eq(intarray_len(aslice), 0);
+
+    intarray_free(aslice);
+}
+END_TEST
+
+
+/*
  * Test slicing from an empty tsarray.
  *
  * Makes sure the resulting slice is empty.
@@ -371,6 +398,7 @@ Suite *tsarray_suite(void)
     tcase_add_test(tc, test_slice_step_too_large);
     tcase_add_test(tc, test_slice_none);
     tcase_add_test(tc, test_slice_start_past_stop);
+    tcase_add_test(tc, test_slice_back_start_before_stop);
     tcase_add_test(tc, test_slice_from_empty);
     tcase_add_test(tc, test_slice_none_from_empty);
     tcase_add_test(tc, test_slice_all);
