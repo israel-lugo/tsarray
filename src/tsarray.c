@@ -34,6 +34,9 @@
 /* get INT_MAX */
 #include <limits.h>
 
+/* get abs() */
+#include <stdlib.h>
+
 /* get memcpy and memmove */
 #include <string.h>
 
@@ -82,12 +85,6 @@ struct _tsarray_priv {
  */
 #define MIN_USAGE_RATIO 2
 
-
-static struct _tsarray_pub *tsarray_slice_forward(const struct _tsarray_pub *src_tsarray,
-        size_t start, size_t stop, int step) __NON_NULL __ATTR_MALLOC;
-
-static struct _tsarray_pub *tsarray_slice_backwards(const struct _tsarray_pub *src_tsarray,
-        size_t start, size_t stop, int step) __NON_NULL __ATTR_MALLOC;
 
 static inline void *get_nth_item(const void *items, size_t index,
         size_t obj_size) __ATTR_CONST __NON_NULL;
@@ -291,7 +288,8 @@ struct _tsarray_pub *tsarray_copy(const struct _tsarray_pub *src_tsarray)
  * Create a tsarray as a slice of an existing tsarray.
  *
  * Receives the source tsarray, the slice start and stop indexes, and the
- * step value.
+ * step value. step may be positive (to slice forward) or negative (to
+ * slice backwards), but not zero.
  *
  * Returns a pointer to the newly created tsarray, or NULL in case of
  * error.
@@ -299,44 +297,43 @@ struct _tsarray_pub *tsarray_copy(const struct _tsarray_pub *src_tsarray)
 struct _tsarray_pub *tsarray_slice(const struct _tsarray_pub *src_tsarray,
         size_t start, size_t stop, int step)
 {
-    if (step > 0)
-        return tsarray_slice_forward(src_tsarray, start, stop, step);
-    else if (step < 0)
-        return tsarray_slice_backwards(src_tsarray, start, stop, step);
-
-    /* zero step makes no sense */
-    return NULL;
-}
-
-
-static struct _tsarray_pub *tsarray_slice_forward(const struct _tsarray_pub *src_tsarray,
-        size_t start, size_t stop, int step)
-{
     const struct _tsarray_priv *src_priv = (const struct _tsarray_priv *)src_tsarray;
     const size_t obj_size = src_priv->obj_size;
+    const size_t lo_bound = min(start, stop);
+    const size_t hi_bound = min(max(start, stop), src_priv->len);
+
     assert(src_priv->len <= src_priv->capacity);
 
-    /* shortcircuit empty cases, avoid undefined behavior below */
-    if (start >= stop || start >= src_priv->len)
+    /* zero step makes no sense */
+    if (step == 0)
+        return NULL;
+
+    /* shortcircuit emty cases */
+    if (start == stop                          /* requested empty slice */
+            || (start < stop) != (step > 0)    /* direction contradicts step */
+            || lo_bound >= src_priv->len)      /* lower bound beyond array */
         return tsarray_new(obj_size);
+
+    assert(lo_bound < hi_bound);
+    assert(hi_bound <= src_priv->len);
 
     if (step == 1)
     {   /* simple case: straightforward cut */
-        const char *first = get_nth_item(src_tsarray->items, start, obj_size);
-        /* we know start < src_priv->len because we shortcircuited above */
-        const size_t slice_len = min(stop, src_priv->len) - start;
+        const char *first = get_nth_item(src_tsarray->items, lo_bound, obj_size);
+        const size_t slice_len = hi_bound - lo_bound;
 
         return tsarray_from_array(first, slice_len, obj_size);
     }
     else
-    {   /* stepping over items */
-        assert(stop > start);
-        const size_t slice_len = 1 + ((stop - start - 1)/step);
+    {   /* stepping over items, or going backwards */
+        const size_t slice_len = 1 + ((hi_bound - lo_bound - 1)/abs(step));
         struct _tsarray_priv *slice_priv = _tsarray_new_of_len(obj_size, slice_len);
+        /* when going backwards, user may tell us to start beyond the array */
+        const size_t real_start = min(start, src_priv->len-1);
 
         for (size_t i=0; i<slice_len; i++)
         {
-            const char *src = get_nth_item(src_tsarray->items, start + i*step, obj_size);
+            const char *src = get_nth_item(src_tsarray->items, real_start + i*step, obj_size);
             char *dest = get_nth_item(slice_priv->pub.items, i, obj_size);
 
             memcpy(dest, src, obj_size);
@@ -345,14 +342,6 @@ static struct _tsarray_pub *tsarray_slice_forward(const struct _tsarray_pub *src
         return &slice_priv->pub;
     }
     /* UNREACHABLE */
-}
-
-
-static struct _tsarray_pub *tsarray_slice_backwards(const struct _tsarray_pub *src_tsarray,
-        size_t start, size_t stop, int step)
-{
-    /* TODO */
-    return NULL;
 }
 
 
