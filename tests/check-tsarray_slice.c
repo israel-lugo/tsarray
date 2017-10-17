@@ -168,7 +168,7 @@ START_TEST(test_slice_some_step)
     const int stop = 100;
     const size_t slice_start = 4;
     const size_t slice_stop = 50;
-    const size_t slice_step = 3;
+    const int slice_step = 3;
     const size_t expected_slice_len = (slice_stop - slice_start)/slice_step + 1;
     intarray *aslice;
     int i;
