@@ -195,6 +195,40 @@ END_TEST
 
 
 /*
+ * Test slicing some items from a tsarray, with a negative step.
+ */
+START_TEST(test_slice_some_step_reverse)
+{
+    const int stop = 100;
+    const size_t slice_start = 50;
+    const size_t slice_stop = 4;
+    const int slice_step = -3;
+    const size_t expected_slice_len = (slice_start - slice_stop)/(-slice_step) + 1;
+    intarray *aslice;
+    int i;
+
+    /* make sure test parameters are correctly in bounds */
+    ck_assert_int_lt(slice_stop + 1 + (expected_slice_len-1)*(-slice_step), stop);
+
+    append_seq_checked(a1, 0, stop);
+
+    aslice = intarray_slice(a1, slice_start, slice_stop, slice_step);
+
+    /* aslice was successfully created and is not the same as a1 */
+    ck_assert_ptr_ne(aslice, NULL);
+    ck_assert_ptr_ne(aslice, a1);
+
+    ck_assert_uint_eq(intarray_len(aslice), expected_slice_len);
+
+    for (i=0; i<expected_slice_len; i++)
+        ck_assert_int_eq(aslice->items[i], a1->items[slice_start + i*slice_step]);
+
+    intarray_free(aslice);
+}
+END_TEST
+
+
+/*
  * Test creating a slice with a step larger than the slice range.
  *
  * Makes sure the slice contains the first item and nothing else.
@@ -429,6 +463,7 @@ Suite *tsarray_suite(void)
     tcase_add_test(tc, test_slice_some);
     tcase_add_test(tc, test_slice_some_reverse);
     tcase_add_test(tc, test_slice_some_step);
+    tcase_add_test(tc, test_slice_some_step_reverse);
     tcase_add_test(tc, test_slice_step_too_large);
     tcase_add_test(tc, test_slice_none);
     tcase_add_test(tc, test_slice_start_past_stop);
