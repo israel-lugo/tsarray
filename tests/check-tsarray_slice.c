@@ -128,6 +128,39 @@ END_TEST
 
 
 /*
+ * Test slicing some items from a tsarray in reverse.
+ *
+ * Given:
+ *      a1 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+ * Checks that:
+ *      a1[8:4:-1] == [8, 7, 6, 5]
+ */
+START_TEST(test_slice_some_reverse)
+{
+    const int stop = 10;
+    const size_t slice_start = 8;
+    const size_t slice_stop = 4;
+    const size_t expected_slice_len = slice_start-slice_stop;
+    intarray *aslice;
+    int i;
+
+    append_seq_checked(a1, 0, stop);
+
+    aslice = intarray_slice(a1, slice_start, slice_stop, -1);
+
+    /* aslice was successfully created and is not the same as a1 */
+    ck_assert_ptr_ne(aslice, NULL);
+    ck_assert_ptr_ne(aslice, a1);
+
+    ck_assert_uint_eq(intarray_len(aslice), expected_slice_len);
+
+    for (i=0; i<expected_slice_len; i++)
+        ck_assert_int_eq(aslice->items[i], a1->items[slice_start-i]);
+}
+END_TEST
+
+
+/*
  * Test slicing some items from a tsarray, with a step.
  */
 START_TEST(test_slice_some_step)
@@ -394,6 +427,7 @@ Suite *tsarray_suite(void)
 
     tcase_add_test(tc, test_slice_one);
     tcase_add_test(tc, test_slice_some);
+    tcase_add_test(tc, test_slice_some_reverse);
     tcase_add_test(tc, test_slice_some_step);
     tcase_add_test(tc, test_slice_step_too_large);
     tcase_add_test(tc, test_slice_none);
