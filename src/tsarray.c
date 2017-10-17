@@ -330,8 +330,9 @@ struct _tsarray_pub *tsarray_slice(const struct _tsarray_pub *src_tsarray,
         struct _tsarray_priv *slice_priv = _tsarray_new_of_len(obj_size, slice_len);
         /* when going backwards, user may tell us to start beyond the array */
         const size_t real_start = min(start, src_priv->len-1);
+        size_t i;
 
-        for (size_t i=0; i<slice_len; i++)
+        for (i=0; i<slice_len; i++)
         {
             const char *src = get_nth_item(src_tsarray->items, real_start + i*step, obj_size);
             char *dest = get_nth_item(slice_priv->pub.items, i, obj_size);
