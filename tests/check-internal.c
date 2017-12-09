@@ -116,21 +116,46 @@ START_TEST(test_can_size_mult)
 END_TEST
 
 
+START_TEST(test_size_to_long)
+{
+    ck_assert_int_eq(size_to_long((size_t)0), 0);
+    ck_assert_int_eq(size_to_long((size_t)1), 1);
+    ck_assert_int_eq(size_to_long((size_t)1000), 1000);
+
+    if ((uintmax_t)SIZE_MAX > (uintmax_t)LONG_MAX)
+    {   /* size_t larger than long (may or may not fit in intmax_t) */
+        ck_assert_int_eq(size_to_long(SIZE_MAX), LONG_MAX);
+        ck_assert_int_eq(size_to_long((size_t)LONG_MAX), LONG_MAX);
+        ck_assert_int_eq(size_to_long(((size_t)LONG_MAX)+1), LONG_MAX);
+        ck_assert_int_eq(size_to_long(SIZE_MAX-1), LONG_MAX);
+    }
+    else
+    {   /* size_t fits in long (and therefore in intmax_t) */
+        ck_assert_int_eq(size_to_long(SIZE_MAX), (intmax_t)SIZE_MAX);
+        ck_assert_int_eq(size_to_long(SIZE_MAX-1), (intmax_t)(SIZE_MAX-1));
+    }
+}
+END_TEST
+
+
 Suite *internal_suite(void)
 {
     Suite *s;
-    TCase *tc_overflow;
+    TCase *tc_overflow, *tc_conversions;
 
     s = suite_create("internal");
 
     tc_overflow = tcase_create("overflow");
+    tc_conversions = tcase_create("conversions");
 
     tcase_add_test(tc_overflow, test_can_int_add);
     tcase_add_test(tc_overflow, test_can_long_add);
     tcase_add_test(tc_overflow, test_can_size_add);
     tcase_add_test(tc_overflow, test_can_size_mult);
-
     suite_add_tcase(s, tc_overflow);
+
+    tcase_add_test(tc_conversions, test_size_to_long);
+    suite_add_tcase(s, tc_conversions);
 
     return s;
 }

@@ -142,6 +142,20 @@ static inline int can_size_mult(const size_t x, const size_t y)
 }
 
 
+/*
+ * Convert a size_t to a signed long integer, capping at LONG_MAX.
+ *
+ * This function must be used, instead of a direct cast, to protect from
+ * cases where the (unsigned) value of x is too large to be represented in
+ * a (signed) long integer. Per C99, that would be undefined behavior. In
+ * such a case, this function returns LONG_MAX.
+ */
+static inline long size_to_long(const size_t x)
+{
+    return (x > (unsigned long)LONG_MAX) ? LONG_MAX : x;
+}
+
+
 #endif  /* _COMMON_H */
 
 
