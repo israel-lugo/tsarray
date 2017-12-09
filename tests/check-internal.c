@@ -62,6 +62,28 @@ START_TEST(test_can_int_add)
 END_TEST
 
 
+START_TEST(test_can_long_add)
+{
+    ck_assert(can_long_add(0, 0));
+    ck_assert(can_long_add(1, 1));
+    ck_assert(can_long_add(1, -1));
+    ck_assert(can_long_add(0, LONG_MAX));
+    ck_assert(can_long_add(LONG_MAX, 0));
+    ck_assert(can_long_add(LONG_MAX, -1));
+    ck_assert(can_long_add(LONG_MIN, 1));
+    ck_assert(can_long_add(LONG_MIN, LONG_MAX));
+    ck_assert(can_long_add(LONG_MAX/2, LONG_MAX/2));
+    ck_assert(!can_long_add(LONG_MAX, 1));
+    ck_assert(!can_long_add(1, LONG_MAX));
+    ck_assert(!can_long_add(LONG_MIN, -1));
+    ck_assert(!can_long_add(LONG_MIN, LONG_MIN));
+    ck_assert(!can_long_add(LONG_MAX, LONG_MAX));
+    ck_assert(!can_long_add(LONG_MAX, LONG_MAX-1));
+    ck_assert(!can_long_add(LONG_MAX/2, LONG_MAX/2 + 2));
+}
+END_TEST
+
+
 START_TEST(test_can_size_add)
 {
     ck_assert(can_size_add(0, 0));
@@ -104,6 +126,7 @@ Suite *internal_suite(void)
     tc_overflow = tcase_create("overflow");
 
     tcase_add_test(tc_overflow, test_can_int_add);
+    tcase_add_test(tc_overflow, test_can_long_add);
     tcase_add_test(tc_overflow, test_can_size_add);
     tcase_add_test(tc_overflow, test_can_size_mult);
 

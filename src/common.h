@@ -109,6 +109,17 @@ static inline int can_int_add(const int x, const int y)
                   && (x >= 0 || y >= INT_MIN - x));
 }
 
+
+/*
+ * Check whether two signed long integers can be added without overflowing.
+ */
+static inline int can_long_add(const long x, const long y)
+{
+    return likely((x <= 0 || y <= LONG_MAX - x)
+                  && (x >= 0 || y >= LONG_MIN - x));
+}
+
+
 /*
  * Check whether two size_t values can be added without overflowing.
  */
