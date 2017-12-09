@@ -304,6 +304,8 @@ struct _tsarray_pub *tsarray_slice(const struct _tsarray_pub *src_tsarray,
     const size_t lo_bound = min(start, stop);
     const size_t hi_bound = min(max(start, stop), src_priv->len);
 
+    /* TODO: Support negative indices, "counting from last", like Python */
+
     assert(src_priv->len <= src_priv->capacity);
 
     /* zero step makes no sense */
