@@ -53,6 +53,7 @@ START_TEST(test_can_int_add)
     ck_assert(can_int_add(INT_MAX/2, INT_MAX/2));
     ck_assert(!can_int_add(INT_MAX, 1));
     ck_assert(!can_int_add(1, INT_MAX));
+    ck_assert(!can_int_add(INT_MIN, -1));
     ck_assert(!can_int_add(INT_MIN, INT_MIN));
     ck_assert(!can_int_add(INT_MAX, INT_MAX));
     ck_assert(!can_int_add(INT_MAX, INT_MAX-1));
