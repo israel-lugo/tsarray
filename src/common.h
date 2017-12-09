@@ -98,6 +98,9 @@
 
 
 static inline int can_int_add(const int x, const int y) __ATTR_CONST;
+static inline int can_long_add(const long x, const long y) __ATTR_CONST;
+static inline int can_size_add(const size_t x, const size_t y) __ATTR_CONST;
+static inline int can_size_mult(const size_t x, const size_t y) __ATTR_CONST;
 
 
 /*
