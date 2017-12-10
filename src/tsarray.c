@@ -74,7 +74,7 @@ struct _tsarray_priv {
  *      capacity = len*(1 + 1/MARGIN_RATIO) + MIN_MARGIN
  *
  * MIN_MARGIN must be <= SIZE_MAX - SIZE_MAX/MARGIN_RATIO, to avoid integer
- * overflow in tsarray_resize.
+ * overflow in tsarray_resize. See the calculation of margin there.
  */
 #define MARGIN_RATIO 8
 #define MIN_MARGIN 4
