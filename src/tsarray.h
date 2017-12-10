@@ -80,7 +80,7 @@ int tsarray_extend(struct _tsarray_pub *tsarray_dest,
         struct _tsarray_pub *tsarray_src) __NON_NULL;
 
 struct _tsarray_pub *tsarray_slice(const struct _tsarray_pub *p_tsarray,
-        size_t start, size_t stop, int step) __NON_NULL __ATTR_MALLOC;
+        long start, long stop, long step) __NON_NULL __ATTR_MALLOC;
 
 int tsarray_remove(struct _tsarray_pub *p_tsarray, int index) __NON_NULL;
 
@@ -123,7 +123,7 @@ void tsarray_free(struct _tsarray_pub *p_tsarray) __NON_NULL;
         return tsarray_remove((struct _tsarray_pub *)array, index); \
     } \
     static inline arraytype *arraytype##_slice(const arraytype *array, \
-            size_t start, size_t stop, int step) { \
+            long start, long stop, long step) { \
         return (arraytype *)tsarray_slice((const struct _tsarray_pub *)array, \
                 start, stop, step); \
     } \

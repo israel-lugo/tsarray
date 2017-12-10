@@ -297,12 +297,12 @@ struct _tsarray_pub *tsarray_copy(const struct _tsarray_pub *src_tsarray)
  * error.
  */
 struct _tsarray_pub *tsarray_slice(const struct _tsarray_pub *src_tsarray,
-        size_t start, size_t stop, int step)
+        long start, long stop, long step)
 {
     const struct _tsarray_priv *src_priv = (const struct _tsarray_priv *)src_tsarray;
     const size_t obj_size = src_priv->obj_size;
-    const size_t lo_bound = min(start, stop);
-    const size_t hi_bound = min(max(start, stop), src_priv->len);
+    const long lo_bound = min(start, stop);
+    const long hi_bound = min(max(start, stop), size_to_long(src_priv->len));
 
     /* TODO: Support negative indices, "counting from last", like Python */
 
@@ -315,11 +315,11 @@ struct _tsarray_pub *tsarray_slice(const struct _tsarray_pub *src_tsarray,
     /* shortcircuit emty cases */
     if (start == stop                          /* requested empty slice */
             || (start < stop) != (step > 0)    /* direction contradicts step */
-            || lo_bound >= src_priv->len)      /* lower bound beyond array */
+            || lo_bound >= size_to_long(src_priv->len)) /* lower bound beyond array */
         return tsarray_new(obj_size);
 
     assert(lo_bound < hi_bound);
-    assert(hi_bound <= src_priv->len);
+    assert(hi_bound <= size_to_long(src_priv->len));
 
     if (step == 1)
     {   /* simple case: straightforward cut */
@@ -330,10 +330,10 @@ struct _tsarray_pub *tsarray_slice(const struct _tsarray_pub *src_tsarray,
     }
     else
     {   /* stepping over items, or going backwards */
-        const size_t slice_len = 1 + ((hi_bound - lo_bound - 1)/abs(step));
+        const size_t slice_len = 1 + ((hi_bound - lo_bound - 1)/labs(step));
         struct _tsarray_priv *slice_priv = _tsarray_new_of_len(obj_size, slice_len);
         /* when going backwards, user may tell us to start beyond the array */
-        const size_t real_start = min(start, src_priv->len-1);
+        const size_t real_start = min(start, size_to_long(src_priv->len-1));
         size_t i;
 
         for (i=0; i<slice_len; i++)
