@@ -239,11 +239,18 @@ static int tsarray_resize(struct _tsarray_priv *priv, unsigned long new_len)
  * Returns a pointer to the newly created tsarray, or NULL in case of
  * error.
  */
-struct _tsarray_pub *tsarray_from_array(const void *src, size_t src_len,
+struct _tsarray_pub *tsarray_from_array(const void *src, unsigned long src_len,
         size_t obj_size)
 {
-    struct _tsarray_priv *priv = _tsarray_new_of_len(obj_size, src_len);
-    struct _tsarray_pub *pub = &priv->pub;
+    struct _tsarray_priv *priv;
+    struct _tsarray_pub *pub;
+
+    /* must fit in signed long indices */
+    if (src_len > (unsigned long)LONG_MAX)
+        return NULL;
+
+    priv = _tsarray_new_of_len(obj_size, src_len);
+    pub = &priv->pub;
 
     /* pass the error up */
     if (unlikely(priv == NULL))
