@@ -62,8 +62,8 @@
 struct _tsarray_priv {
     struct _tsarray_pub pub;    /* MUST be the first member (read above) */
     size_t obj_size;
-    size_t capacity;
-    size_t len;
+    unsigned long capacity;     /* keep <= LONG_MAX, as indices are signed */
+    unsigned long len;          /* likewise */
 };
 
 
