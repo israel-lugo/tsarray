@@ -312,7 +312,10 @@ struct _tsarray_pub *tsarray_slice(const struct _tsarray_pub *src_tsarray,
     const struct _tsarray_priv *src_priv = (const struct _tsarray_priv *)src_tsarray;
     const size_t obj_size = src_priv->obj_size;
     const long lo_bound = min(start, stop);
-    const long hi_bound = min(max(start, stop), size_to_long(src_priv->len));
+
+    /* make sure we don't overflow converting len to long */
+    assert(src_priv->len <= (unsigned long)LONG_MAX);
+    const long hi_bound = min(max(start, stop), (long)src_priv->len);
 
     /* TODO: Support negative indices, "counting from last", like Python */
 
@@ -325,28 +328,31 @@ struct _tsarray_pub *tsarray_slice(const struct _tsarray_pub *src_tsarray,
     /* shortcircuit emty cases */
     if (start == stop                          /* requested empty slice */
             || (start < stop) != (step > 0)    /* direction contradicts step */
-            || lo_bound >= size_to_long(src_priv->len)) /* lower bound beyond array */
+            || lo_bound >= (long)src_priv->len) /* lower bound beyond array */
         return tsarray_new(obj_size);
 
     assert(lo_bound < hi_bound);
-    assert(hi_bound <= size_to_long(src_priv->len));
+    assert(hi_bound <= (long)src_priv->len);
 
     if (step == 1)
     {   /* simple case: straightforward cut */
         const char *first = get_nth_item(src_tsarray->items, lo_bound, obj_size);
-        const size_t slice_len = hi_bound - lo_bound;
+        const long slice_len = hi_bound - lo_bound;
 
         return tsarray_from_array(first, slice_len, obj_size);
     }
     else
     {   /* stepping over items, or going backwards */
-        const size_t slice_len = 1 + ((hi_bound - lo_bound - 1)/labs(step));
+        const unsigned long slice_len = 1 + ((hi_bound - lo_bound - 1)/labs(step));
         struct _tsarray_priv *slice_priv = _tsarray_new_of_len(obj_size, slice_len);
         /* when going backwards, user may tell us to start beyond the array */
-        const size_t real_start = min(start, size_to_long(src_priv->len-1));
-        size_t i;
+        const long real_start = min(start, (long)src_priv->len-1);
+        long i;
 
-        for (i=0; i<slice_len; i++)
+        assert(slice_len <= (unsigned long)LONG_MAX);
+        assert(can_long_mult(slice_len-1, step));
+
+        for (i=0; i<(long)slice_len; i++)
         {
             const char *src = get_nth_item(src_tsarray->items, real_start + i*step, obj_size);
             char *dest = get_nth_item(slice_priv->pub.items, i, obj_size);

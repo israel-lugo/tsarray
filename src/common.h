@@ -124,6 +124,25 @@ static inline int can_long_add(const long x, const long y)
 
 
 /*
+ * Check whether two signed long integers can be multiplied without overflowing.
+ */
+static inline int can_long_mult(const long x, const long y)
+{
+    /* avoid division by zero */
+    if (y == 0)
+        return 1;
+
+    /* don't use the general solution for y == -1; two's-complement
+     * architectures can't represent LONG_MIN/(-1) */
+    if (y == -1)
+        return x >= -LONG_MAX;
+
+    return y > 0 ? (x <= LONG_MAX/y && x >= LONG_MIN/y)
+                    : (x >= LONG_MAX/y && x <= LONG_MIN/y);
+}
+
+
+/*
  * Check whether two size_t values can be added without overflowing.
  */
 static inline int can_size_add(const size_t x, const size_t y)
