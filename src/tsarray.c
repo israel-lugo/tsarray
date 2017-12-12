@@ -131,13 +131,17 @@ struct _tsarray_pub *tsarray_new(size_t obj_size)
 /*
  * Create a new tsarray of the specified length.
  *
- * For internal use only. Receives the size of the array's items, and the
- * desired array length. Returns the private tsarray descriptor of newly
- * created tsarray that contains the specified amount of uninitialized
- * items. In case of error, returns NULL.
+ * For internal use only. Receives the size of the array's items and the
+ * desired array length, which MUST fit in a (signed) long index.
+ *
+ * Returns the private tsarray descriptor of newly created tsarray that
+ * contains the specified amount of uninitialized items. In case of error,
+ * returns NULL.
  */
-static struct _tsarray_priv *_tsarray_new_of_len(size_t obj_size, size_t len)
+static struct _tsarray_priv *_tsarray_new_of_len(size_t obj_size, unsigned long len)
 {
+    assert(len <= (unsigned long)LONG_MAX);
+
     struct _tsarray_priv *priv = (struct _tsarray_priv *)tsarray_new(obj_size);
     int retval;
 
