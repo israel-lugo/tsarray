@@ -73,8 +73,10 @@ struct _tsarray_priv {
  * following formula:
  *      capacity = len*(1 + 1/MARGIN_RATIO) + MIN_MARGIN
  *
- * MIN_MARGIN must be <= SIZE_MAX - SIZE_MAX/MARGIN_RATIO, to avoid integer
- * overflow in tsarray_resize. See the calculation of margin there.
+ * MIN_MARGIN must be <= LONG_MAX - LONG_MAX/MARGIN_RATIO, to avoid integer
+ * overflow in tsarray_resize. See the calculation of margin there. We use
+ * LONG_MAX (instead of ULONG_MAX) because we want to keep len and capacity
+ * within signed long bounds.
  */
 #define MARGIN_RATIO 8
 #define MIN_MARGIN 4
@@ -89,7 +91,7 @@ struct _tsarray_priv {
 static inline void *get_nth_item(const void *items, size_t index,
         size_t obj_size) __ATTR_CONST __NON_NULL;
 
-static int tsarray_resize(struct _tsarray_priv *priv, size_t new_len) __NON_NULL;
+static int tsarray_resize(struct _tsarray_priv *priv, unsigned long new_len) __NON_NULL;
 
 static void set_items(void *items, size_t index, const void *objects,
         size_t obj_size, size_t count);
@@ -168,12 +170,13 @@ static struct _tsarray_priv *_tsarray_new_of_len(size_t obj_size, size_t len)
  *
  * Returns zero in case of success, a negative error value otherwise.
  */
-static int tsarray_resize(struct _tsarray_priv *priv, size_t new_len)
+static int tsarray_resize(struct _tsarray_priv *priv, unsigned long new_len)
 {
-    const size_t old_len = priv->len;
+    const unsigned long old_len = priv->len;
     const size_t obj_size = priv->obj_size;
-    size_t capacity = priv->capacity;
+    unsigned long capacity = priv->capacity;
 
+    assert(new_len <= (unsigned long)LONG_MAX);    /* must fit in signed long indices */
     assert(old_len <= capacity);
 
     /* check if there's anything to change */
@@ -181,7 +184,7 @@ static int tsarray_resize(struct _tsarray_priv *priv, size_t new_len)
         return 0;
 
     /* asking for more objects than we can address? */
-    if (unlikely(!can_size_mult(new_len, obj_size)))
+    if (unlikely(new_len > SIZE_MAX || !can_size_mult(new_len, obj_size)))
         return TSARRAY_ENOMEM;
 
     /* Only change capacity if new_len is outside the hysteresis range
@@ -189,23 +192,19 @@ static int tsarray_resize(struct _tsarray_priv *priv, size_t new_len)
      * overreacting to multiple append/remove patterns. */
     if (new_len > capacity || new_len < capacity/MIN_USAGE_RATIO)
     {
-        assert(MIN_MARGIN <= SIZE_MAX - SIZE_MAX/MARGIN_RATIO);
+        assert(MIN_MARGIN <= LONG_MAX - LONG_MAX/MARGIN_RATIO);
         /* can never overflow, as long as the assert above is true */
-        size_t margin = new_len/MARGIN_RATIO + MIN_MARGIN;
+        unsigned long margin = new_len/MARGIN_RATIO + MIN_MARGIN;
         void *new_items;
 
-        /* if the margin makes us overflow, don't use it */
-        if (unlikely(!can_size_add(new_len, margin)))
+        /* if the margin makes us overflow, don't use it (we know from
+         * check above that at least new_len is addressable in bytes) */
+        if (unlikely(!can_long_add(new_len, margin))
+                || unlikely(new_len+margin > SIZE_MAX)
+                || unlikely(!can_size_mult(new_len+margin, obj_size)))
             margin = 0;
 
         capacity = new_len + margin;
-
-        /* if we overflow converting to bytes, allocate less */
-        if (unlikely(!can_size_mult(capacity, obj_size)))
-        {   /* we know SIZE_MAX fits at least new_len*obj_size */
-            capacity = SIZE_MAX/obj_size;
-            assert(capacity >= new_len);
-        }
 
         new_items = realloc(priv->pub.items, capacity*obj_size);
 
