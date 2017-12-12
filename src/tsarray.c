@@ -259,6 +259,8 @@ struct _tsarray_pub *tsarray_from_array(const void *src, size_t src_len,
     assert(priv->len == src_len);
     assert(priv->len <= priv->capacity);
 
+    /* no need to check for overflow in src_len*obj_size; we were able to
+     * allocate at least that, in _tsarray_new_of_len */
     memcpy(pub->items, src, src_len*obj_size);
 
     return pub;
