@@ -137,8 +137,11 @@ static inline int can_long_mult(const long x, const long y)
     if (y == -1)
         return x >= -LONG_MAX;
 
-    return y > 0 ? (x <= LONG_MAX/y && x >= LONG_MIN/y)
-                    : (x >= LONG_MAX/y && x <= LONG_MIN/y);
+    const long max_over_y = LONG_MAX/y;
+    const long min_over_y = LONG_MIN/y;
+
+    return y > 0 ? (x <= max_over_y && x >= min_over_y)
+                    : (x >= max_over_y && x <= min_over_y);
 }
 
 
