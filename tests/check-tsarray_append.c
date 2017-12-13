@@ -28,8 +28,7 @@
 #include <stdlib.h>
 #include <check.h>
 
-/* get SIZE_MAX */
-#include <stdint.h>
+#include <limits.h>
 
 #include <tsarray.h>
 
@@ -54,10 +53,10 @@ END_TEST
  */
 START_TEST(test_append_many)
 {
-    const int start = -1010;
-    const int stop = 32010;
-    const size_t expected_len = stop-start;
-    int i;
+    const long start = -1010;
+    const long stop = 32010;
+    const unsigned long expected_len = stop-start;
+    unsigned int i;
 
     append_seq_checked(a1, start, stop);
 
@@ -76,22 +75,22 @@ END_TEST
 START_TEST(test_append_overflow)
 {
     struct _tsarray_priv *priv = (struct _tsarray_priv *)a1;
-    const size_t old_capacity = priv->capacity;
-    const size_t old_len = priv->len;
+    const unsigned long old_capacity = priv->capacity;
+    const unsigned long old_len = priv->len;
     int *const old_items = a1->items;
     int i = 5;
     int append_result;
 
     /* we cheat by messing with the internal structure, to avoid having to
      * actually append millions of objects */
-    priv->len = priv->capacity = SIZE_MAX;
+    priv->len = priv->capacity = LONG_MAX;
 
     append_result = intarray_append(a1, &i);
     ck_assert_int_eq(append_result, TSARRAY_EOVERFLOW);
 
     /* make sure append didn't change anything */
-    ck_assert_uint_eq(priv->capacity, SIZE_MAX);
-    ck_assert_uint_eq(priv->len, SIZE_MAX);
+    ck_assert_uint_eq(priv->capacity, LONG_MAX);
+    ck_assert_uint_eq(priv->len, LONG_MAX);
     ck_assert_ptr_eq(a1->items, old_items);
 
     /* undo the cheating, destructor may need the real values */

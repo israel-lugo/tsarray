@@ -380,10 +380,13 @@ struct _tsarray_pub *tsarray_slice(const struct _tsarray_pub *src_tsarray,
 int tsarray_append(struct _tsarray_pub *tsarray, const void *object)
 {
     struct _tsarray_priv *priv = (struct _tsarray_priv *)tsarray;
-    const size_t old_len = priv->len;
+    const unsigned long old_len = priv->len;
     int retval;
 
-    if (unlikely(!can_size_add(old_len, 1)))
+    assert(old_len <= (unsigned long)LONG_MAX);
+    assert(priv->capacity <= (unsigned long)LONG_MAX);
+
+    if (unlikely(!can_long_add(old_len, 1)))
         return TSARRAY_EOVERFLOW;
 
     retval = tsarray_resize(priv, old_len+1);
