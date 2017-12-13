@@ -421,16 +421,19 @@ int tsarray_extend(struct _tsarray_pub *tsarray_dest,
     struct _tsarray_priv *priv_dest = (struct _tsarray_priv *)tsarray_dest;
     struct _tsarray_priv *priv_src = (struct _tsarray_priv *)tsarray_src;
     const size_t obj_size = priv_src->obj_size;
-    const size_t dest_len = priv_dest->len;
-    const size_t src_len = priv_src->len;
-    size_t new_len;
+    const unsigned long dest_len = priv_dest->len;
+    const unsigned long src_len = priv_src->len;
+    unsigned long new_len;
     int retval;
+
+    assert(src_len <= (unsigned long)LONG_MAX);
+    assert(dest_len <= (unsigned long)LONG_MAX);
 
     /* arrays must be of the same thing (or at least same object size) */
     if (unlikely(priv_dest->obj_size != priv_src->obj_size))
         return TSARRAY_EINVAL;
 
-    if (unlikely(!can_size_add(dest_len, src_len)))
+    if (unlikely(!can_long_add(dest_len, src_len)))
         return TSARRAY_EOVERFLOW;
 
     new_len = dest_len + src_len;
