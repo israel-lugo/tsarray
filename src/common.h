@@ -108,8 +108,8 @@ static inline int can_size_mult(const size_t x, const size_t y) __ATTR_CONST;
  */
 static inline int can_int_add(const int x, const int y)
 {
-    return likely((x <= 0 || y <= INT_MAX - x)
-                  && (x >= 0 || y >= INT_MIN - x));
+    return likely((y <= 0 || x <= INT_MAX - y)
+                  && (y >= 0 || x >= INT_MIN - y));
 }
 
 
@@ -118,8 +118,8 @@ static inline int can_int_add(const int x, const int y)
  */
 static inline int can_long_add(const long x, const long y)
 {
-    return likely((x <= 0 || y <= LONG_MAX - x)
-                  && (x >= 0 || y >= LONG_MIN - x));
+    return likely((y <= 0 || x <= LONG_MAX - y)
+                  && (y >= 0 || x >= LONG_MIN - y));
 }
 
 
