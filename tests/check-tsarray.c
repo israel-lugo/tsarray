@@ -81,7 +81,7 @@ START_TEST(test_from_array)
     const size_t srclen = sizeof(src) / sizeof(src[0]);
     intarray *b = intarray_from_array(src, srclen);
     struct _tsarray_priv *privb = (struct _tsarray_priv *)b;
-    int i;
+    unsigned int i;
 
     ck_assert_ptr_ne(b, NULL);
     ck_assert_ptr_ne(b->items, src);
