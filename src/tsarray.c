@@ -181,6 +181,8 @@ static int tsarray_resize(struct _tsarray_priv *priv, unsigned long new_len)
     unsigned long capacity = priv->capacity;
 
     assert(new_len <= (unsigned long)LONG_MAX);    /* must fit in signed long indices */
+    assert(old_len <= (unsigned long)LONG_MAX);
+    assert(capacity <= (unsigned long)LONG_MAX);
     assert(old_len <= capacity);
 
     /* check if there's anything to change */
