@@ -175,6 +175,32 @@ START_TEST(test_extend_self_large)
 END_TEST
 
 
+TSARRAY_TYPEDEF(chararray, char);
+
+/*
+ * Check that a tsarray can't be extended with a tsarray of different obj_size.
+ *
+ * This should be impossible for the user, due to compile-time type checks.
+ * However, the user may bypass these checks through type casts and so on.
+ */
+START_TEST(test_extend_incompatible)
+{
+    chararray *a2 = chararray_new();
+    const int value = 33;
+    int extend_result;
+
+    append_seq_checked(a1, value, value+1);
+
+    /* this is really an ugly hack, user shouldn't do it, but we want to
+     * check for it anyway */
+    extend_result = intarray_extend(a1, (intarray *)a2);
+    ck_assert_int_eq(extend_result, TSARRAY_EINVAL);
+
+    chararray_free(a2);
+}
+END_TEST
+
+
 Suite *tsarray_suite(void)
 {
     Suite *s;
@@ -189,6 +215,7 @@ Suite *tsarray_suite(void)
     tcase_add_test(tc, test_extend_empty);
     tcase_add_test(tc, test_extend_self_one);
     tcase_add_test(tc, test_extend_self_large);
+    tcase_add_test(tc, test_extend_incompatible);
 
     suite_add_tcase(s, tc);
 

@@ -403,7 +403,9 @@ int tsarray_extend(struct _tsarray_pub *tsarray_dest,
     size_t new_len;
     int retval;
 
-    assert(priv_dest->obj_size == priv_src->obj_size);
+    /* arrays must be of the same thing (or at least same object size) */
+    if (unlikely(priv_dest->obj_size != priv_src->obj_size))
+        return TSARRAY_EINVAL;
 
     if (unlikely(!can_size_add(dest_len, src_len)))
         return TSARRAY_EOVERFLOW;
