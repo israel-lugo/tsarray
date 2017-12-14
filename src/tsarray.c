@@ -140,7 +140,7 @@ struct _tsarray_pub *tsarray_new(size_t obj_size)
  */
 static struct _tsarray_priv *_tsarray_new_of_len(size_t obj_size, unsigned long len)
 {
-    assert(len <= (unsigned long)LONG_MAX);
+    assert(ulong_fits_in_long(len));
 
     struct _tsarray_priv *priv = (struct _tsarray_priv *)tsarray_new(obj_size);
     int retval;
@@ -180,9 +180,9 @@ static int tsarray_resize(struct _tsarray_priv *priv, unsigned long new_len)
     const size_t obj_size = priv->obj_size;
     unsigned long capacity = priv->capacity;
 
-    assert(new_len <= (unsigned long)LONG_MAX);    /* must fit in signed long indices */
-    assert(old_len <= (unsigned long)LONG_MAX);
-    assert(capacity <= (unsigned long)LONG_MAX);
+    assert(ulong_fits_in_long(new_len));    /* must fit in signed long indices */
+    assert(ulong_fits_in_long(old_len));
+    assert(ulong_fits_in_long(capacity));
     assert(old_len <= capacity);
 
     /* check if there's anything to change */
@@ -248,7 +248,7 @@ struct _tsarray_pub *tsarray_from_array(const void *src, unsigned long src_len,
     struct _tsarray_pub *pub;
 
     /* must fit in signed long indices */
-    if (src_len > (unsigned long)LONG_MAX)
+    if (!ulong_fits_in_long(src_len))
         return NULL;
 
     priv = _tsarray_new_of_len(obj_size, src_len);
@@ -316,7 +316,7 @@ struct _tsarray_pub *tsarray_slice(const struct _tsarray_pub *src_tsarray,
     const long lo_bound = min(start, stop);
 
     /* make sure we don't overflow converting len to long */
-    assert(src_priv->len <= (unsigned long)LONG_MAX);
+    assert(ulong_fits_in_long(src_priv->len));
     const long hi_bound = min(max(start, stop), (long)src_priv->len);
 
     /* TODO: Support negative indices, "counting from last", like Python */
@@ -351,7 +351,7 @@ struct _tsarray_pub *tsarray_slice(const struct _tsarray_pub *src_tsarray,
         const long real_start = min(start, (long)src_priv->len-1);
         long i;
 
-        assert(slice_len <= (unsigned long)LONG_MAX);
+        assert(ulong_fits_in_long(slice_len));
         assert(can_long_mult(slice_len-1, step));
 
         for (i=0; i<(long)slice_len; i++)
@@ -383,8 +383,8 @@ int tsarray_append(struct _tsarray_pub *tsarray, const void *object)
     const unsigned long old_len = priv->len;
     int retval;
 
-    assert(old_len <= (unsigned long)LONG_MAX);
-    assert(priv->capacity <= (unsigned long)LONG_MAX);
+    assert(ulong_fits_in_long(old_len));
+    assert(ulong_fits_in_long(priv->capacity));
 
     if (unlikely(!can_long_add(old_len, 1)))
         return TSARRAY_EOVERFLOW;
@@ -426,8 +426,8 @@ int tsarray_extend(struct _tsarray_pub *tsarray_dest,
     unsigned long new_len;
     int retval;
 
-    assert(src_len <= (unsigned long)LONG_MAX);
-    assert(dest_len <= (unsigned long)LONG_MAX);
+    assert(ulong_fits_in_long(src_len));
+    assert(ulong_fits_in_long(dest_len));
 
     /* arrays must be of the same thing (or at least same object size) */
     if (unlikely(priv_dest->obj_size != priv_src->obj_size))

@@ -107,6 +107,21 @@ START_TEST(test_can_long_mult)
 END_TEST
 
 
+START_TEST(test_ulong_fits_in_long)
+{
+    ck_assert(ulong_fits_in_long(0));
+    ck_assert(ulong_fits_in_long(1));
+    ck_assert(ulong_fits_in_long((unsigned long)LONG_MAX));
+    ck_assert(ulong_fits_in_long((unsigned long)LONG_MAX-1));
+    if (ULONG_MAX > (unsigned long)LONG_MAX)
+    {   /* should be true in any common architecture */
+        ck_assert(!ulong_fits_in_long(((unsigned long)LONG_MAX) + 1));
+        ck_assert(!ulong_fits_in_long(ULONG_MAX));
+    }
+}
+END_TEST
+
+
 START_TEST(test_can_size_add)
 {
     ck_assert(can_size_add(0, 0));
@@ -174,6 +189,7 @@ Suite *internal_suite(void)
     tcase_add_test(tc_overflow, test_can_int_add);
     tcase_add_test(tc_overflow, test_can_long_add);
     tcase_add_test(tc_overflow, test_can_long_mult);
+    tcase_add_test(tc_overflow, test_ulong_fits_in_long);
     tcase_add_test(tc_overflow, test_can_size_add);
     tcase_add_test(tc_overflow, test_can_size_mult);
     suite_add_tcase(s, tc_overflow);

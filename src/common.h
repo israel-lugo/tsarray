@@ -146,6 +146,17 @@ static inline int can_long_mult(const long x, const long y)
 
 
 /*
+ * Check whether an unsigned long's value would fit in a signed long.
+ *
+ * Useful to make sure conversion is possible, without risking overflow.
+ */
+static inline int ulong_fits_in_long(const unsigned long x)
+{
+    return x <= (unsigned long)LONG_MAX;
+}
+
+
+/*
  * Check whether two size_t values can be added without overflowing.
  */
 static inline int can_size_add(const size_t x, const size_t y)
