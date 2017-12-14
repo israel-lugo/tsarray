@@ -38,9 +38,9 @@
 
 
 /*
- * Test removing an element from an array.
+ * Test removing the only element of an array.
  */
-START_TEST(test_remove)
+START_TEST(test_remove_to_empty)
 {
     struct _tsarray_priv *priv = (struct _tsarray_priv *)a1;
     int remove_result;
@@ -51,6 +51,58 @@ START_TEST(test_remove)
     ck_assert_int_eq(remove_result, 0);
 
     ck_assert_uint_eq(priv->len, 0);
+}
+END_TEST
+
+
+/*
+ * Test removing the first element of an array.
+ */
+START_TEST(test_remove_first)
+{
+    struct _tsarray_priv *priv = (struct _tsarray_priv *)a1;
+    const long start = -4;
+    const long stop = 10;
+    const unsigned long full_len = stop-start;
+    int remove_result;
+    unsigned long i;
+
+    append_seq_checked(a1, start, stop);
+
+    remove_result = intarray_remove(a1, 0);
+    ck_assert_int_eq(remove_result, 0);
+
+    ck_assert_uint_eq(priv->len, full_len-1);
+
+    /* check that remaining items are there, shifted 1 to the left */
+    for (i=0; i<full_len-1; i++)
+        ck_assert_int_eq(a1->items[i], start+(long)i+1);
+}
+END_TEST
+
+
+/*
+ * Test removing the last element of an array.
+ */
+START_TEST(test_remove_last)
+{
+    struct _tsarray_priv *priv = (struct _tsarray_priv *)a1;
+    const long start = -4;
+    const long stop = 10;
+    const unsigned long full_len = stop-start;
+    int remove_result;
+    unsigned long i;
+
+    append_seq_checked(a1, start, stop);
+
+    remove_result = intarray_remove(a1, full_len-1);
+    ck_assert_int_eq(remove_result, 0);
+
+    ck_assert_uint_eq(priv->len, full_len-1);
+
+    /* check that remaining items are there, in the same place */
+    for (i=0; i<full_len-1; i++)
+        ck_assert_int_eq(a1->items[i], start+(long)i);
 }
 END_TEST
 
@@ -170,7 +222,9 @@ Suite *tsarray_suite(void)
 
     tc = tcase_with_a1_create("remove");
 
-    tcase_add_test(tc, test_remove);
+    tcase_add_test(tc, test_remove_to_empty);
+    tcase_add_test(tc, test_remove_first);
+    tcase_add_test(tc, test_remove_last);
     tcase_add_test(tc, test_remove_empty);
     tcase_add_test(tc, test_remove_noent);
     tcase_add_test(tc, test_remove_middle);
