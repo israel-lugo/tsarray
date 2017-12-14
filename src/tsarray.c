@@ -475,6 +475,10 @@ int tsarray_remove(struct _tsarray_pub *tsarray, int index)
     const size_t obj_size = priv->obj_size;
     const size_t old_len = priv->len;
 
+    /* we don't allow negative indices; will do sometime, a la Python */
+    if (unlikely(index < 0))
+        return TSARRAY_EINVAL;
+
     if (unlikely(index >= old_len))
         return TSARRAY_ENOENT;
 
