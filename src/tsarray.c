@@ -88,13 +88,13 @@ struct _tsarray_priv {
 #define MIN_USAGE_RATIO 2
 
 
-static inline void *get_nth_item(const void *items, size_t index,
+static inline void *get_nth_item(const void *items, long index,
         size_t obj_size) __ATTR_CONST __NON_NULL;
 
 static int tsarray_resize(struct _tsarray_priv *priv, unsigned long new_len) __NON_NULL;
 
-static void set_items(void *items, size_t index, const void *objects,
-        size_t obj_size, size_t count);
+static void set_items(void *items, long index, const void *objects,
+        size_t obj_size, unsigned long count);
 
 
 /*
@@ -528,14 +528,17 @@ void tsarray_free(struct _tsarray_pub *tsarray)
  * Get the address of an item in a tsarray.
  *
  * Get the Nth object from a tsarray's abstract item array, given its
- * index and the size of the array's objects.
+ * index and the size of the array's objects. index MUST be positive.
  */
-static inline void *get_nth_item(const void *items, size_t index,
+static inline void *get_nth_item(const void *items, long index,
         size_t obj_size)
 {
+    /* TODO: Implement negative indices, a la Python */
+    assert(index >= 0);
+
     /* can't use void for pointer arithmetic, it's an incomplete type
      * (also, char can alias anything; it's meant for this) */
-    return ((char *)items + (index * obj_size));
+    return ((char *)items + ((unsigned long)index * obj_size));
 }
 
 
@@ -553,11 +556,11 @@ static inline void *get_nth_item(const void *items, size_t index,
  * The memory area holding the source object MUST NOT overlap with the
  * destination memory area.
  */
-static void set_items(void *items, size_t index, const void *objects,
-        size_t obj_size, size_t count)
+static void set_items(void *items, long index, const void *objects,
+        size_t obj_size, unsigned long count)
 {
     char *dest = get_nth_item(items, index, obj_size);
-    assert(can_size_mult(obj_size, count));
+    assert(count <= SIZE_MAX && can_size_mult(obj_size, count));
     const size_t bytes = obj_size*count;
 
     /* memory ranges don't overlap */
