@@ -25,8 +25,8 @@ intarray *a2;
 
 static void _print_array(const intarray *a, const char *name)
 {
-    const size_t len = intarray_len(a);
-    int i;
+    const unsigned long len = intarray_len(a);
+    unsigned int i;
 
     for (i=0; i < len; i++)
         printf("%s[%d] = %d\n", name, i, a->items[i]);

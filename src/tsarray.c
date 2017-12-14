@@ -100,7 +100,7 @@ static void set_items(void *items, long index, const void *objects,
 /*
  * Get the number of items in a tsarray.
  */
-size_t tsarray_len(const struct _tsarray_pub *tsarray)
+unsigned long tsarray_len(const struct _tsarray_pub *tsarray)
 {
     return ((const struct _tsarray_priv *)tsarray)->len;
 }
