@@ -469,23 +469,26 @@ int tsarray_extend(struct _tsarray_pub *tsarray_dest,
  *
  * Returns zero in case of success, or a negative error value otherwise.
  */
-int tsarray_remove(struct _tsarray_pub *tsarray, int index)
+int tsarray_remove(struct _tsarray_pub *tsarray, long index)
 {
     struct _tsarray_priv *priv = (struct _tsarray_priv *)tsarray;
     const size_t obj_size = priv->obj_size;
-    const size_t old_len = priv->len;
+    const unsigned long old_len = priv->len;
+
+    assert(ulong_fits_in_long(old_len));
 
     /* we don't allow negative indices; will do sometime, a la Python */
     if (unlikely(index < 0))
         return TSARRAY_EINVAL;
 
-    if (unlikely(index >= old_len))
+    if (unlikely(index >= (long)old_len))
         return TSARRAY_ENOENT;
 
+    assert(old_len > 0);
     assert(old_len <= priv->capacity);
     assert(old_len <= SIZE_MAX / obj_size);
 
-    if (index < old_len-1)
+    if (index < (long)old_len-1)
     {   /* there's data to the right, need to move it left */
         const size_t bytes_to_move = (old_len - index - 1)*obj_size;
         char *item_to_rm = get_nth_item(tsarray->items, index, obj_size);

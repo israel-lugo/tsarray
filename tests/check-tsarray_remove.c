@@ -185,12 +185,12 @@ START_TEST(test_remove_many)
     struct _tsarray_priv *priv = (struct _tsarray_priv *)a1;
     const int start = -1010;
     const int stop = 32010;
-    const size_t full_len = stop-start;
-    const size_t len_after_remove = 10;
-    const size_t remove_count = full_len - len_after_remove;
-    size_t full_capacity;
+    const unsigned long full_len = stop-start;
+    const unsigned long len_after_remove = 10;
+    const unsigned long remove_count = full_len - len_after_remove;
+    unsigned long full_capacity;
+    unsigned long i;
     int remove_result;
-    int i;
 
     /* fill the array */
     append_seq_checked(a1, start, stop);
