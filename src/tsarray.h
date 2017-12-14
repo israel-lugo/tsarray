@@ -66,7 +66,7 @@ struct _tsarray_pub {
 
 struct _tsarray_pub *tsarray_new(size_t obj_size) __ATTR_MALLOC;
 
-struct _tsarray_pub *tsarray_from_array(const void *src, size_t src_len,
+struct _tsarray_pub *tsarray_from_array(const void *src, unsigned long src_len,
         size_t obj_size) __ATTR_MALLOC;
 
 struct _tsarray_pub *tsarray_copy(const struct _tsarray_pub *tsarray_src)
@@ -104,7 +104,7 @@ void tsarray_free(struct _tsarray_pub *p_tsarray) __NON_NULL;
         return (arraytype *)tsarray_new(sizeof(objtype)); \
     } \
     static inline arraytype *arraytype##_from_array(const void *src, \
-            size_t src_len) { \
+            unsigned long src_len) { \
         return (arraytype *)tsarray_from_array(src, src_len, sizeof(objtype)); \
     } \
     static inline arraytype *arraytype##_copy(const arraytype *array) { \
