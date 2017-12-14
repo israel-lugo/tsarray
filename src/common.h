@@ -185,7 +185,7 @@ static inline int can_size_mult(const size_t x, const size_t y)
  */
 static inline long size_to_long(const size_t x)
 {
-    return (x > (unsigned long)LONG_MAX) ? LONG_MAX : x;
+    return (x > (unsigned long)LONG_MAX) ? LONG_MAX : (long)x;
 }
 
 
