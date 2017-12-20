@@ -117,7 +117,7 @@ START_TEST(test_remove_empty)
 
     remove_result = intarray_remove(a1, 0);
     ck_assert_int_eq(remove_result, TSARRAY_ENOENT);
-    ck_assert_int_eq(priv->len, 0);
+    ck_assert_uint_eq(priv->len, 0);
 }
 END_TEST
 
@@ -137,7 +137,7 @@ START_TEST(test_remove_noent)
     ck_assert_int_eq(remove_result, TSARRAY_ENOENT);
 
     /* make sure the existing item is still there */
-    ck_assert_int_eq(priv->len, 1);
+    ck_assert_uint_eq(priv->len, 1);
     ck_assert_uint_ge(priv->capacity, priv->len);
     ck_assert_int_eq(a1->items[0], value);
 }
