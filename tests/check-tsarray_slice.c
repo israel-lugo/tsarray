@@ -40,24 +40,25 @@
  * for the slicing, and the number of items past the end of the source
  * tsarray to include in the slice.
  *
- * slice_start MUST be <= src_len.
+ * slice_start MUST be positive and <= src_len. src_len MUST be <= INT_MAX.
+ * past MUST be <= LONG_MAX.
  *
  * Checks that a new tsarray is created, with the expected length and
  * contents (up to the end of the source tsarray, but not beyond). Will
  * fail the test if any of the internal checks fail.
  */
-static void check_slice_past_n(unsigned long src_len, unsigned long slice_start,
+static void check_slice_past_n(unsigned long src_len, long slice_start,
         unsigned long past)
 {
     const int start = -100;
-    const int stop = start+src_len;
-    const unsigned long expected_slice_len = src_len-slice_start;
+    const int stop = start+(int)src_len;
+    const unsigned long expected_slice_len = src_len-(unsigned long)slice_start;
     intarray *aslice;
     unsigned int i;
 
     append_seq_checked(a1, start, stop);
 
-    aslice = intarray_slice(a1, slice_start, intarray_len(a1)+past, 1);
+    aslice = intarray_slice(a1, slice_start, (long)intarray_len(a1)+(long)past, 1);
 
     /* aslice was successfully created and is not the same as a1 */
     ck_assert_ptr_ne(aslice, NULL);
@@ -172,7 +173,7 @@ START_TEST(test_slice_some_step)
     unsigned int i;
 
     /* make sure test parameters are correctly in bounds */
-    ck_assert_int_lt(slice_start + (expected_slice_len-1)*slice_step, stop);
+    ck_assert_int_lt(slice_start + (long)(expected_slice_len-1)*slice_step, stop);
 
     append_seq_checked(a1, 0, stop);
 
@@ -206,7 +207,7 @@ START_TEST(test_slice_some_step_reverse)
     unsigned int i;
 
     /* make sure test parameters are correctly in bounds */
-    ck_assert_int_lt(slice_stop + 1 + (expected_slice_len-1)*(-slice_step), stop);
+    ck_assert_int_lt(slice_stop + 1 + (long)(expected_slice_len-1)*(-slice_step), stop);
 
     append_seq_checked(a1, 0, stop);
 
