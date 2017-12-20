@@ -124,6 +124,15 @@ static inline int can_long_add(const long x, const long y)
 
 
 /*
+ * Check whether two unsigned long can be added as longs, without overflowing.
+ */
+static inline int can_add_as_long(const unsigned long x, const unsigned long y)
+{
+    return likely(y <= LONG_MAX && x <= LONG_MAX && x <= LONG_MAX - y);
+}
+
+
+/*
  * Check whether two signed long integers can be multiplied without overflowing.
  */
 static inline int can_long_mult(const long x, const long y)
