@@ -339,13 +339,13 @@ struct _tsarray_pub *tsarray_slice(const struct _tsarray_pub *src_tsarray,
     if (step == 1)
     {   /* simple case: straightforward cut */
         const char *first = get_nth_item(src_tsarray->items, lo_bound, obj_size);
-        const long slice_len = hi_bound - lo_bound;
+        const unsigned long slice_len = (unsigned long)(hi_bound - lo_bound);
 
         return tsarray_from_array(first, slice_len, obj_size);
     }
     else
     {   /* stepping over items, or going backwards */
-        const unsigned long slice_len = 1 + ((hi_bound - lo_bound - 1)/labs(step));
+        const unsigned long slice_len = (unsigned long)((hi_bound - lo_bound - 1)/labs(step)) + 1;
         struct _tsarray_priv *slice_priv = _tsarray_new_of_len(obj_size, slice_len);
         /* when going backwards, user may tell us to start beyond the array */
         const long real_start = min(start, (long)src_priv->len-1);
