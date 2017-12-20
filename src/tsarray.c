@@ -205,7 +205,7 @@ static int tsarray_resize(struct _tsarray_priv *priv, unsigned long new_len)
 
         /* if the margin makes us overflow, don't use it (we know from
          * check above that at least new_len is addressable in bytes) */
-        if (unlikely(!can_long_add(new_len, margin))
+        if (unlikely(!can_long_add((long)new_len, (long)margin))
                 || unlikely(new_len+margin > SIZE_MAX)
                 || unlikely(!can_size_mult(new_len+margin, obj_size)))
             margin = 0;
@@ -352,7 +352,7 @@ struct _tsarray_pub *tsarray_slice(const struct _tsarray_pub *src_tsarray,
         long i;
 
         assert(ulong_fits_in_long(slice_len));
-        assert(can_long_mult(slice_len-1, step));
+        assert(can_long_mult((long)slice_len-1, step));
 
         for (i=0; i<(long)slice_len; i++)
         {
@@ -386,7 +386,7 @@ int tsarray_append(struct _tsarray_pub *tsarray, const void *object)
     assert(ulong_fits_in_long(old_len));
     assert(ulong_fits_in_long(priv->capacity));
 
-    if (unlikely(!can_long_add(old_len, 1)))
+    if (unlikely(!can_long_add((long)old_len, 1)))
         return TSARRAY_EOVERFLOW;
 
     retval = tsarray_resize(priv, old_len+1);
@@ -396,7 +396,7 @@ int tsarray_append(struct _tsarray_pub *tsarray, const void *object)
     /* there has to be room after a resize */
     assert(priv->len <= priv->capacity);
 
-    set_items(tsarray->items, old_len, object, priv->obj_size, 1);
+    set_items(tsarray->items, (long)old_len, object, priv->obj_size, 1);
 
     return 0;
 }
@@ -433,7 +433,7 @@ int tsarray_extend(struct _tsarray_pub *tsarray_dest,
     if (unlikely(priv_dest->obj_size != priv_src->obj_size))
         return TSARRAY_EINVAL;
 
-    if (unlikely(!can_long_add(dest_len, src_len)))
+    if (unlikely(!can_long_add((long)dest_len, (long)src_len)))
         return TSARRAY_EOVERFLOW;
 
     new_len = dest_len + src_len;
@@ -454,7 +454,7 @@ int tsarray_extend(struct _tsarray_pub *tsarray_dest,
      * alias. In any case, this is only really relevant to the set_items
      * call, source arg. We _could_ just do something like dest != src ?
      * src->items : dest->items. */
-    set_items(tsarray_dest->items, dest_len, tsarray_src->items, obj_size, src_len);
+    set_items(tsarray_dest->items, (long)dest_len, tsarray_src->items, obj_size, src_len);
 
     return 0;
 }
@@ -488,9 +488,9 @@ int tsarray_remove(struct _tsarray_pub *tsarray, long index)
     assert(old_len <= priv->capacity);
     assert(old_len <= SIZE_MAX / obj_size);
 
-    if (index < (long)old_len-1)
+    if ((unsigned long)index < old_len-1)
     {   /* there's data to the right, need to move it left */
-        const size_t bytes_to_move = (old_len - index - 1)*obj_size;
+        const size_t bytes_to_move = (old_len - (unsigned long)index - 1)*obj_size;
         char *item_to_rm = get_nth_item(tsarray->items, index, obj_size);
 
         memmove(item_to_rm, item_to_rm+obj_size, bytes_to_move);
