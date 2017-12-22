@@ -62,8 +62,8 @@
 struct _tsarray_priv {
     struct _tsarray_pub pub;    /* MUST be the first member (read above) */
     size_t obj_size;
-    size_t capacity;
-    size_t len;
+    unsigned long capacity;     /* keep <= LONG_MAX, as indices are signed */
+    unsigned long len;          /* likewise */
 };
 
 
@@ -73,8 +73,10 @@ struct _tsarray_priv {
  * following formula:
  *      capacity = len*(1 + 1/MARGIN_RATIO) + MIN_MARGIN
  *
- * MIN_MARGIN must be <= SIZE_MAX - SIZE_MAX/MARGIN_RATIO, to avoid integer
- * overflow in tsarray_resize. See the calculation of margin there.
+ * MIN_MARGIN must be <= LONG_MAX - LONG_MAX/MARGIN_RATIO, to avoid integer
+ * overflow in tsarray_resize. See the calculation of margin there. We use
+ * LONG_MAX (instead of ULONG_MAX) because we want to keep len and capacity
+ * within signed long bounds.
  */
 #define MARGIN_RATIO 8
 #define MIN_MARGIN 4
@@ -86,19 +88,19 @@ struct _tsarray_priv {
 #define MIN_USAGE_RATIO 2
 
 
-static inline void *get_nth_item(const void *items, size_t index,
+static inline void *get_nth_item(const void *items, long index,
         size_t obj_size) __ATTR_CONST __NON_NULL;
 
-static int tsarray_resize(struct _tsarray_priv *priv, size_t new_len) __NON_NULL;
+static int tsarray_resize(struct _tsarray_priv *priv, unsigned long new_len) __NON_NULL;
 
-static void set_items(void *items, size_t index, const void *objects,
-        size_t obj_size, size_t count);
+static void set_items(void *items, long index, const void *objects,
+        size_t obj_size, unsigned long count);
 
 
 /*
  * Get the number of items in a tsarray.
  */
-size_t tsarray_len(const struct _tsarray_pub *tsarray)
+unsigned long tsarray_len(const struct _tsarray_pub *tsarray)
 {
     return ((const struct _tsarray_priv *)tsarray)->len;
 }
@@ -129,13 +131,17 @@ struct _tsarray_pub *tsarray_new(size_t obj_size)
 /*
  * Create a new tsarray of the specified length.
  *
- * For internal use only. Receives the size of the array's items, and the
- * desired array length. Returns the private tsarray descriptor of newly
- * created tsarray that contains the specified amount of uninitialized
- * items. In case of error, returns NULL.
+ * For internal use only. Receives the size of the array's items and the
+ * desired array length, which MUST fit in a (signed) long index.
+ *
+ * Returns the private tsarray descriptor of newly created tsarray that
+ * contains the specified amount of uninitialized items. In case of error,
+ * returns NULL.
  */
-static struct _tsarray_priv *_tsarray_new_of_len(size_t obj_size, size_t len)
+static struct _tsarray_priv *_tsarray_new_of_len(size_t obj_size, unsigned long len)
 {
+    assert(ulong_fits_in_long(len));
+
     struct _tsarray_priv *priv = (struct _tsarray_priv *)tsarray_new(obj_size);
     int retval;
 
@@ -168,12 +174,15 @@ static struct _tsarray_priv *_tsarray_new_of_len(size_t obj_size, size_t len)
  *
  * Returns zero in case of success, a negative error value otherwise.
  */
-static int tsarray_resize(struct _tsarray_priv *priv, size_t new_len)
+static int tsarray_resize(struct _tsarray_priv *priv, unsigned long new_len)
 {
-    const size_t old_len = priv->len;
+    const unsigned long old_len = priv->len;
     const size_t obj_size = priv->obj_size;
-    size_t capacity = priv->capacity;
+    unsigned long capacity = priv->capacity;
 
+    assert(ulong_fits_in_long(new_len));    /* must fit in signed long indices */
+    assert(ulong_fits_in_long(old_len));
+    assert(ulong_fits_in_long(capacity));
     assert(old_len <= capacity);
 
     /* check if there's anything to change */
@@ -181,7 +190,7 @@ static int tsarray_resize(struct _tsarray_priv *priv, size_t new_len)
         return 0;
 
     /* asking for more objects than we can address? */
-    if (unlikely(!can_size_mult(new_len, obj_size)))
+    if (unlikely(new_len > SIZE_MAX || !can_size_mult(new_len, obj_size)))
         return TSARRAY_ENOMEM;
 
     /* Only change capacity if new_len is outside the hysteresis range
@@ -189,23 +198,19 @@ static int tsarray_resize(struct _tsarray_priv *priv, size_t new_len)
      * overreacting to multiple append/remove patterns. */
     if (new_len > capacity || new_len < capacity/MIN_USAGE_RATIO)
     {
-        assert(MIN_MARGIN <= SIZE_MAX - SIZE_MAX/MARGIN_RATIO);
+        assert(MIN_MARGIN <= LONG_MAX - LONG_MAX/MARGIN_RATIO);
         /* can never overflow, as long as the assert above is true */
-        size_t margin = new_len/MARGIN_RATIO + MIN_MARGIN;
+        unsigned long margin = new_len/MARGIN_RATIO + MIN_MARGIN;
         void *new_items;
 
-        /* if the margin makes us overflow, don't use it */
-        if (unlikely(!can_size_add(new_len, margin)))
+        /* if the margin makes us overflow, don't use it (we know from
+         * check above that at least new_len is addressable in bytes) */
+        if (unlikely(!can_add_as_long(new_len, margin))
+                || unlikely(new_len+margin > SIZE_MAX)
+                || unlikely(!can_size_mult(new_len+margin, obj_size)))
             margin = 0;
 
         capacity = new_len + margin;
-
-        /* if we overflow converting to bytes, allocate less */
-        if (unlikely(!can_size_mult(capacity, obj_size)))
-        {   /* we know SIZE_MAX fits at least new_len*obj_size */
-            capacity = SIZE_MAX/obj_size;
-            assert(capacity >= new_len);
-        }
 
         new_items = realloc(priv->pub.items, capacity*obj_size);
 
@@ -236,11 +241,18 @@ static int tsarray_resize(struct _tsarray_priv *priv, size_t new_len)
  * Returns a pointer to the newly created tsarray, or NULL in case of
  * error.
  */
-struct _tsarray_pub *tsarray_from_array(const void *src, size_t src_len,
+struct _tsarray_pub *tsarray_from_array(const void *src, unsigned long src_len,
         size_t obj_size)
 {
-    struct _tsarray_priv *priv = _tsarray_new_of_len(obj_size, src_len);
-    struct _tsarray_pub *pub = &priv->pub;
+    struct _tsarray_priv *priv;
+    struct _tsarray_pub *pub;
+
+    /* must fit in signed long indices */
+    if (!ulong_fits_in_long(src_len))
+        return NULL;
+
+    priv = _tsarray_new_of_len(obj_size, src_len);
+    pub = &priv->pub;
 
     /* pass the error up */
     if (unlikely(priv == NULL))
@@ -297,12 +309,17 @@ struct _tsarray_pub *tsarray_copy(const struct _tsarray_pub *src_tsarray)
  * error.
  */
 struct _tsarray_pub *tsarray_slice(const struct _tsarray_pub *src_tsarray,
-        size_t start, size_t stop, int step)
+        long start, long stop, long step)
 {
     const struct _tsarray_priv *src_priv = (const struct _tsarray_priv *)src_tsarray;
     const size_t obj_size = src_priv->obj_size;
-    const size_t lo_bound = min(start, stop);
-    const size_t hi_bound = min(max(start, stop), src_priv->len);
+    const long lo_bound = min(start, stop);
+
+    /* make sure we don't overflow converting len to long */
+    assert(ulong_fits_in_long(src_priv->len));
+    const long hi_bound = min(max(start, stop), (long)src_priv->len);
+
+    /* TODO: Support negative indices, "counting from last", like Python */
 
     assert(src_priv->len <= src_priv->capacity);
 
@@ -313,28 +330,31 @@ struct _tsarray_pub *tsarray_slice(const struct _tsarray_pub *src_tsarray,
     /* shortcircuit emty cases */
     if (start == stop                          /* requested empty slice */
             || (start < stop) != (step > 0)    /* direction contradicts step */
-            || lo_bound >= src_priv->len)      /* lower bound beyond array */
+            || lo_bound >= (long)src_priv->len) /* lower bound beyond array */
         return tsarray_new(obj_size);
 
     assert(lo_bound < hi_bound);
-    assert(hi_bound <= src_priv->len);
+    assert(hi_bound <= (long)src_priv->len);
 
     if (step == 1)
     {   /* simple case: straightforward cut */
         const char *first = get_nth_item(src_tsarray->items, lo_bound, obj_size);
-        const size_t slice_len = hi_bound - lo_bound;
+        const unsigned long slice_len = (unsigned long)(hi_bound - lo_bound);
 
         return tsarray_from_array(first, slice_len, obj_size);
     }
     else
     {   /* stepping over items, or going backwards */
-        const size_t slice_len = 1 + ((hi_bound - lo_bound - 1)/abs(step));
+        const unsigned long slice_len = (unsigned long)((hi_bound - lo_bound - 1)/labs(step)) + 1;
         struct _tsarray_priv *slice_priv = _tsarray_new_of_len(obj_size, slice_len);
         /* when going backwards, user may tell us to start beyond the array */
-        const size_t real_start = min(start, src_priv->len-1);
-        size_t i;
+        const long real_start = min(start, (long)src_priv->len-1);
+        long i;
 
-        for (i=0; i<slice_len; i++)
+        assert(ulong_fits_in_long(slice_len));
+        assert(can_long_mult((long)slice_len-1, step));
+
+        for (i=0; i<(long)slice_len; i++)
         {
             const char *src = get_nth_item(src_tsarray->items, real_start + i*step, obj_size);
             char *dest = get_nth_item(slice_priv->pub.items, i, obj_size);
@@ -360,10 +380,13 @@ struct _tsarray_pub *tsarray_slice(const struct _tsarray_pub *src_tsarray,
 int tsarray_append(struct _tsarray_pub *tsarray, const void *object)
 {
     struct _tsarray_priv *priv = (struct _tsarray_priv *)tsarray;
-    const size_t old_len = priv->len;
+    const unsigned long old_len = priv->len;
     int retval;
 
-    if (unlikely(!can_size_add(old_len, 1)))
+    assert(ulong_fits_in_long(old_len));
+    assert(ulong_fits_in_long(priv->capacity));
+
+    if (unlikely(!can_add_as_long(old_len, 1)))
         return TSARRAY_EOVERFLOW;
 
     retval = tsarray_resize(priv, old_len+1);
@@ -373,7 +396,7 @@ int tsarray_append(struct _tsarray_pub *tsarray, const void *object)
     /* there has to be room after a resize */
     assert(priv->len <= priv->capacity);
 
-    set_items(tsarray->items, old_len, object, priv->obj_size, 1);
+    set_items(tsarray->items, (long)old_len, object, priv->obj_size, 1);
 
     return 0;
 }
@@ -398,16 +421,19 @@ int tsarray_extend(struct _tsarray_pub *tsarray_dest,
     struct _tsarray_priv *priv_dest = (struct _tsarray_priv *)tsarray_dest;
     struct _tsarray_priv *priv_src = (struct _tsarray_priv *)tsarray_src;
     const size_t obj_size = priv_src->obj_size;
-    const size_t dest_len = priv_dest->len;
-    const size_t src_len = priv_src->len;
-    size_t new_len;
+    const unsigned long dest_len = priv_dest->len;
+    const unsigned long src_len = priv_src->len;
+    unsigned long new_len;
     int retval;
+
+    assert(ulong_fits_in_long(src_len));
+    assert(ulong_fits_in_long(dest_len));
 
     /* arrays must be of the same thing (or at least same object size) */
     if (unlikely(priv_dest->obj_size != priv_src->obj_size))
         return TSARRAY_EINVAL;
 
-    if (unlikely(!can_size_add(dest_len, src_len)))
+    if (unlikely(!can_add_as_long(dest_len, src_len)))
         return TSARRAY_EOVERFLOW;
 
     new_len = dest_len + src_len;
@@ -428,7 +454,7 @@ int tsarray_extend(struct _tsarray_pub *tsarray_dest,
      * alias. In any case, this is only really relevant to the set_items
      * call, source arg. We _could_ just do something like dest != src ?
      * src->items : dest->items. */
-    set_items(tsarray_dest->items, dest_len, tsarray_src->items, obj_size, src_len);
+    set_items(tsarray_dest->items, (long)dest_len, tsarray_src->items, obj_size, src_len);
 
     return 0;
 }
@@ -443,21 +469,28 @@ int tsarray_extend(struct _tsarray_pub *tsarray_dest,
  *
  * Returns zero in case of success, or a negative error value otherwise.
  */
-int tsarray_remove(struct _tsarray_pub *tsarray, int index)
+int tsarray_remove(struct _tsarray_pub *tsarray, long index)
 {
     struct _tsarray_priv *priv = (struct _tsarray_priv *)tsarray;
     const size_t obj_size = priv->obj_size;
-    const size_t old_len = priv->len;
+    const unsigned long old_len = priv->len;
 
-    if (unlikely(index >= old_len))
+    assert(ulong_fits_in_long(old_len));
+
+    /* we don't allow negative indices; will do sometime, a la Python */
+    if (unlikely(index < 0))
+        return TSARRAY_EINVAL;
+
+    if (unlikely(index >= (long)old_len))
         return TSARRAY_ENOENT;
 
+    assert(old_len > 0);
     assert(old_len <= priv->capacity);
     assert(old_len <= SIZE_MAX / obj_size);
 
-    if (index < old_len-1)
+    if ((unsigned long)index < old_len-1)
     {   /* there's data to the right, need to move it left */
-        const size_t bytes_to_move = (old_len - index - 1)*obj_size;
+        const size_t bytes_to_move = (old_len - (unsigned long)index - 1)*obj_size;
         char *item_to_rm = get_nth_item(tsarray->items, index, obj_size);
 
         memmove(item_to_rm, item_to_rm+obj_size, bytes_to_move);
@@ -495,14 +528,17 @@ void tsarray_free(struct _tsarray_pub *tsarray)
  * Get the address of an item in a tsarray.
  *
  * Get the Nth object from a tsarray's abstract item array, given its
- * index and the size of the array's objects.
+ * index and the size of the array's objects. index MUST be positive.
  */
-static inline void *get_nth_item(const void *items, size_t index,
+static inline void *get_nth_item(const void *items, long index,
         size_t obj_size)
 {
+    /* TODO: Implement negative indices, a la Python */
+    assert(index >= 0);
+
     /* can't use void for pointer arithmetic, it's an incomplete type
      * (also, char can alias anything; it's meant for this) */
-    return ((char *)items + (index * obj_size));
+    return ((char *)items + ((unsigned long)index * obj_size));
 }
 
 
@@ -520,11 +556,11 @@ static inline void *get_nth_item(const void *items, size_t index,
  * The memory area holding the source object MUST NOT overlap with the
  * destination memory area.
  */
-static void set_items(void *items, size_t index, const void *objects,
-        size_t obj_size, size_t count)
+static void set_items(void *items, long index, const void *objects,
+        size_t obj_size, unsigned long count)
 {
     char *dest = get_nth_item(items, index, obj_size);
-    assert(can_size_mult(obj_size, count));
+    assert(count <= SIZE_MAX && can_size_mult(obj_size, count));
     const size_t bytes = obj_size*count;
 
     /* memory ranges don't overlap */

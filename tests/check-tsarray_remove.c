@@ -117,7 +117,7 @@ START_TEST(test_remove_empty)
 
     remove_result = intarray_remove(a1, 0);
     ck_assert_int_eq(remove_result, TSARRAY_ENOENT);
-    ck_assert_int_eq(priv->len, 0);
+    ck_assert_uint_eq(priv->len, 0);
 }
 END_TEST
 
@@ -137,7 +137,7 @@ START_TEST(test_remove_noent)
     ck_assert_int_eq(remove_result, TSARRAY_ENOENT);
 
     /* make sure the existing item is still there */
-    ck_assert_int_eq(priv->len, 1);
+    ck_assert_uint_eq(priv->len, 1);
     ck_assert_uint_ge(priv->capacity, priv->len);
     ck_assert_int_eq(a1->items[0], value);
 }
@@ -185,12 +185,12 @@ START_TEST(test_remove_many)
     struct _tsarray_priv *priv = (struct _tsarray_priv *)a1;
     const int start = -1010;
     const int stop = 32010;
-    const size_t full_len = stop-start;
-    const size_t len_after_remove = 10;
-    const size_t remove_count = full_len - len_after_remove;
-    size_t full_capacity;
+    const unsigned long full_len = stop-start;
+    const unsigned long len_after_remove = 10;
+    const unsigned long remove_count = full_len - len_after_remove;
+    unsigned long full_capacity;
+    unsigned long i;
     int remove_result;
-    int i;
 
     /* fill the array */
     append_seq_checked(a1, start, stop);

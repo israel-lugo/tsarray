@@ -78,10 +78,10 @@ START_TEST(test_from_array)
     static const int src[] = {
         15, 66, 98, -7, 1, INT_MIN, -9, -45, 3, 0, -1, 15, INT_MAX
     };
-    const size_t srclen = sizeof(src) / sizeof(src[0]);
+    const unsigned long srclen = sizeof(src) / sizeof(src[0]);
     intarray *b = intarray_from_array(src, srclen);
     struct _tsarray_priv *privb = (struct _tsarray_priv *)b;
-    int i;
+    unsigned int i;
 
     ck_assert_ptr_ne(b, NULL);
     ck_assert_ptr_ne(b->items, src);

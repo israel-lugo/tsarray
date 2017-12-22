@@ -28,9 +28,6 @@
 #include <stdlib.h>
 #include <check.h>
 
-/* get SIZE_MAX */
-#include <stdint.h>
-
 #include <tsarray.h>
 
 #include "setupcheck.h"
@@ -43,23 +40,25 @@
  * for the slicing, and the number of items past the end of the source
  * tsarray to include in the slice.
  *
- * slice_start MUST be <= src_len.
+ * slice_start MUST be positive and <= src_len. src_len MUST be <= INT_MAX.
+ * past MUST be <= LONG_MAX.
  *
  * Checks that a new tsarray is created, with the expected length and
  * contents (up to the end of the source tsarray, but not beyond). Will
  * fail the test if any of the internal checks fail.
  */
-static void check_slice_past_n(size_t src_len, size_t slice_start, size_t past)
+static void check_slice_past_n(unsigned long src_len, long slice_start,
+        unsigned long past)
 {
     const int start = -100;
-    const int stop = start+src_len;
-    const size_t expected_slice_len = src_len-slice_start;
+    const int stop = start+(int)src_len;
+    const unsigned long expected_slice_len = src_len-(unsigned long)slice_start;
     intarray *aslice;
-    int i;
+    unsigned int i;
 
     append_seq_checked(a1, start, stop);
 
-    aslice = intarray_slice(a1, slice_start, intarray_len(a1)+past, 1);
+    aslice = intarray_slice(a1, slice_start, (long)intarray_len(a1)+(long)past, 1);
 
     /* aslice was successfully created and is not the same as a1 */
     ck_assert_ptr_ne(aslice, NULL);
@@ -79,7 +78,7 @@ static void check_slice_past_n(size_t src_len, size_t slice_start, size_t past)
 START_TEST(test_slice_one)
 {
     const int stop = 10;
-    const size_t sliceidx = 4;
+    const long sliceidx = 4;
     intarray *aslice;
 
     append_seq_checked(a1, 0, stop);
@@ -105,11 +104,11 @@ END_TEST
 START_TEST(test_slice_some)
 {
     const int stop = 10;
-    const size_t slice_start = 4;
-    const size_t slice_stop = 8;
-    const size_t expected_slice_len = slice_stop-slice_start;
+    const long slice_start = 4;
+    const long slice_stop = 8;
+    const unsigned long expected_slice_len = slice_stop-slice_start;
     intarray *aslice;
-    int i;
+    unsigned int i;
 
     append_seq_checked(a1, 0, stop);
 
@@ -138,11 +137,11 @@ END_TEST
 START_TEST(test_slice_some_reverse)
 {
     const int stop = 10;
-    const size_t slice_start = 8;
-    const size_t slice_stop = 4;
-    const size_t expected_slice_len = slice_start-slice_stop;
+    const long slice_start = 8;
+    const long slice_stop = 4;
+    const unsigned long expected_slice_len = slice_start-slice_stop;
     intarray *aslice;
-    int i;
+    unsigned int i;
 
     append_seq_checked(a1, 0, stop);
 
@@ -166,15 +165,15 @@ END_TEST
 START_TEST(test_slice_some_step)
 {
     const int stop = 100;
-    const size_t slice_start = 4;
-    const size_t slice_stop = 50;
-    const int slice_step = 3;
-    const size_t expected_slice_len = (slice_stop - slice_start)/slice_step + 1;
+    const long slice_start = 4;
+    const long slice_stop = 50;
+    const long slice_step = 3;
+    const unsigned long expected_slice_len = (slice_stop - slice_start)/slice_step + 1;
     intarray *aslice;
-    int i;
+    unsigned int i;
 
     /* make sure test parameters are correctly in bounds */
-    ck_assert_int_lt(slice_start + (expected_slice_len-1)*slice_step, stop);
+    ck_assert_int_lt(slice_start + (long)(expected_slice_len-1)*slice_step, stop);
 
     append_seq_checked(a1, 0, stop);
 
@@ -200,15 +199,15 @@ END_TEST
 START_TEST(test_slice_some_step_reverse)
 {
     const int stop = 100;
-    const size_t slice_start = 50;
-    const size_t slice_stop = 4;
-    const int slice_step = -3;
-    const size_t expected_slice_len = (slice_start - slice_stop)/(-slice_step) + 1;
+    const long slice_start = 50;
+    const long slice_stop = 4;
+    const long slice_step = -3;
+    const unsigned long expected_slice_len = (slice_start - slice_stop)/(-slice_step) + 1;
     intarray *aslice;
-    int i;
+    unsigned int i;
 
     /* make sure test parameters are correctly in bounds */
-    ck_assert_int_lt(slice_stop + 1 + (expected_slice_len-1)*(-slice_step), stop);
+    ck_assert_int_lt(slice_stop + 1 + (long)(expected_slice_len-1)*(-slice_step), stop);
 
     append_seq_checked(a1, 0, stop);
 
@@ -236,8 +235,8 @@ END_TEST
 START_TEST(test_slice_step_too_large)
 {
     const int stop = 100;
-    const size_t slice_start = 14;
-    const size_t slice_stop = 50;
+    const long slice_start = 14;
+    const long slice_stop = 50;
     intarray *aslice;
 
     append_seq_checked(a1, 0, stop);
@@ -262,7 +261,7 @@ END_TEST
 START_TEST(test_slice_none)
 {
     const int stop = 10;
-    const size_t sliceidx = 4;
+    const long sliceidx = 4;
     intarray *aslice;
 
     append_seq_checked(a1, 0, stop);
@@ -289,8 +288,8 @@ END_TEST
 START_TEST(test_slice_start_past_stop)
 {
     const int stop = 10;
-    const size_t slice_start = 7;
-    const size_t slice_stop = 3;
+    const long slice_start = 7;
+    const long slice_stop = 3;
     intarray *aslice;
 
     append_seq_checked(a1, 0, stop);
@@ -316,8 +315,8 @@ END_TEST
 START_TEST(test_slice_back_start_before_stop)
 {
     const int stop = 10;
-    const size_t slice_start = 3;
-    const size_t slice_stop = 7;
+    const long slice_start = 3;
+    const long slice_stop = 7;
     intarray *aslice;
 
     append_seq_checked(a1, 0, stop);

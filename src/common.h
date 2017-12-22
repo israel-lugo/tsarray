@@ -98,6 +98,9 @@
 
 
 static inline int can_int_add(const int x, const int y) __ATTR_CONST;
+static inline int can_long_add(const long x, const long y) __ATTR_CONST;
+static inline int can_size_add(const size_t x, const size_t y) __ATTR_CONST;
+static inline int can_size_mult(const size_t x, const size_t y) __ATTR_CONST;
 
 
 /*
@@ -105,9 +108,62 @@ static inline int can_int_add(const int x, const int y) __ATTR_CONST;
  */
 static inline int can_int_add(const int x, const int y)
 {
-    return likely((x <= 0 || y <= INT_MAX - x)
-                  && (x >= 0 || y >= INT_MIN - x));
+    return likely((y <= 0 || x <= INT_MAX - y)
+                  && (y >= 0 || x >= INT_MIN - y));
 }
+
+
+/*
+ * Check whether two signed long integers can be added without overflowing.
+ */
+static inline int can_long_add(const long x, const long y)
+{
+    return likely((y <= 0 || x <= LONG_MAX - y)
+                  && (y >= 0 || x >= LONG_MIN - y));
+}
+
+
+/*
+ * Check whether two unsigned long can be added as longs, without overflowing.
+ */
+static inline int can_add_as_long(const unsigned long x, const unsigned long y)
+{
+    return likely(y <= LONG_MAX && x <= LONG_MAX && x <= LONG_MAX - y);
+}
+
+
+/*
+ * Check whether two signed long integers can be multiplied without overflowing.
+ */
+static inline int can_long_mult(const long x, const long y)
+{
+    /* avoid division by zero */
+    if (y == 0)
+        return 1;
+
+    /* don't use the general solution for y == -1; two's-complement
+     * architectures can't represent LONG_MIN/(-1) */
+    if (y == -1)
+        return x >= -LONG_MAX;
+
+    const long max_over_y = LONG_MAX/y;
+    const long min_over_y = LONG_MIN/y;
+
+    return y > 0 ? (x <= max_over_y && x >= min_over_y)
+                    : (x >= max_over_y && x <= min_over_y);
+}
+
+
+/*
+ * Check whether an unsigned long's value would fit in a signed long.
+ *
+ * Useful to make sure conversion is possible, without risking overflow.
+ */
+static inline int ulong_fits_in_long(const unsigned long x)
+{
+    return x <= (unsigned long)LONG_MAX;
+}
+
 
 /*
  * Check whether two size_t values can be added without overflowing.
@@ -125,6 +181,20 @@ static inline int can_size_mult(const size_t x, const size_t y)
 {
     /* avoid division by zero, and trivial case where y==1 */
     return (y <= 1) || (x <= SIZE_MAX/y);
+}
+
+
+/*
+ * Convert a size_t to a signed long integer, capping at LONG_MAX.
+ *
+ * This function must be used, instead of a direct cast, to protect from
+ * cases where the (unsigned) value of x is too large to be represented in
+ * a (signed) long integer. Per C99, that would be undefined behavior. In
+ * such a case, this function returns LONG_MAX.
+ */
+static inline long size_to_long(const size_t x)
+{
+    return (x > (unsigned long)LONG_MAX) ? LONG_MAX : (long)x;
 }
 
 

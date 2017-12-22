@@ -66,13 +66,14 @@ struct _tsarray_pub {
 
 struct _tsarray_pub *tsarray_new(size_t obj_size) __ATTR_MALLOC;
 
-struct _tsarray_pub *tsarray_from_array(const void *src, size_t src_len,
+struct _tsarray_pub *tsarray_from_array(const void *src, unsigned long src_len,
         size_t obj_size) __ATTR_MALLOC;
 
 struct _tsarray_pub *tsarray_copy(const struct _tsarray_pub *tsarray_src)
     __NON_NULL __ATTR_MALLOC;
 
-size_t tsarray_len(const struct _tsarray_pub *tsarray) __ATTR_CONST __NON_NULL;
+unsigned long tsarray_len(const struct _tsarray_pub *tsarray)
+    __ATTR_CONST __NON_NULL;
 
 int tsarray_append(struct _tsarray_pub *tsarray, const void *object) __NON_NULL;
 
@@ -80,9 +81,9 @@ int tsarray_extend(struct _tsarray_pub *tsarray_dest,
         struct _tsarray_pub *tsarray_src) __NON_NULL;
 
 struct _tsarray_pub *tsarray_slice(const struct _tsarray_pub *p_tsarray,
-        size_t start, size_t stop, int step) __NON_NULL __ATTR_MALLOC;
+        long start, long stop, long step) __NON_NULL __ATTR_MALLOC;
 
-int tsarray_remove(struct _tsarray_pub *p_tsarray, int index) __NON_NULL;
+int tsarray_remove(struct _tsarray_pub *p_tsarray, long index) __NON_NULL;
 
 void tsarray_free(struct _tsarray_pub *p_tsarray) __NON_NULL;
 
@@ -103,13 +104,13 @@ void tsarray_free(struct _tsarray_pub *p_tsarray) __NON_NULL;
         return (arraytype *)tsarray_new(sizeof(objtype)); \
     } \
     static inline arraytype *arraytype##_from_array(const void *src, \
-            size_t src_len) { \
+            unsigned long src_len) { \
         return (arraytype *)tsarray_from_array(src, src_len, sizeof(objtype)); \
     } \
     static inline arraytype *arraytype##_copy(const arraytype *array) { \
         return (arraytype *)tsarray_copy((const struct _tsarray_pub *)array); \
     } \
-    static inline size_t arraytype##_len(const arraytype *array) { \
+    static inline unsigned long arraytype##_len(const arraytype *array) { \
         return tsarray_len((const struct _tsarray_pub *)array); \
     } \
     static inline int arraytype##_append(arraytype *array, objtype *object) { \
@@ -119,11 +120,11 @@ void tsarray_free(struct _tsarray_pub *p_tsarray) __NON_NULL;
         return tsarray_extend((struct _tsarray_pub *)dest, \
                 (struct _tsarray_pub *)src); \
     } \
-    static inline int arraytype##_remove(arraytype *array, size_t index) { \
+    static inline int arraytype##_remove(arraytype *array, long index) { \
         return tsarray_remove((struct _tsarray_pub *)array, index); \
     } \
     static inline arraytype *arraytype##_slice(const arraytype *array, \
-            size_t start, size_t stop, int step) { \
+            long start, long stop, long step) { \
         return (arraytype *)tsarray_slice((const struct _tsarray_pub *)array, \
                 start, stop, step); \
     } \
