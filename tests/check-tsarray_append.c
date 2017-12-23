@@ -55,7 +55,7 @@ START_TEST(test_append_many)
 {
     const long start = -1010;
     const long stop = 32010;
-    const unsigned long expected_len = stop-start;
+    const unsigned long expected_len = (unsigned long)(stop-start);
     unsigned int i;
 
     append_seq_checked(a1, start, stop);

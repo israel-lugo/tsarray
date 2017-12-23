@@ -63,7 +63,7 @@ START_TEST(test_remove_first)
     struct _tsarray_priv *priv = (struct _tsarray_priv *)a1;
     const long start = -4;
     const long stop = 10;
-    const unsigned long full_len = stop-start;
+    const unsigned long full_len = (unsigned long)(stop-start);
     int remove_result;
     unsigned long i;
 
@@ -89,13 +89,13 @@ START_TEST(test_remove_last)
     struct _tsarray_priv *priv = (struct _tsarray_priv *)a1;
     const long start = -4;
     const long stop = 10;
-    const unsigned long full_len = stop-start;
+    const unsigned long full_len = (unsigned long)(stop-start);
     int remove_result;
     unsigned long i;
 
     append_seq_checked(a1, start, stop);
 
-    remove_result = intarray_remove(a1, full_len-1);
+    remove_result = intarray_remove(a1, (long)full_len-1);
     ck_assert_int_eq(remove_result, 0);
 
     ck_assert_uint_eq(priv->len, full_len-1);
@@ -162,7 +162,7 @@ START_TEST(test_remove_middle)
     remove_result = intarray_remove(a1, remove_idx);
     ck_assert_int_eq(remove_result, 0);
 
-    ck_assert_uint_eq(priv->len, stop-1);
+    ck_assert_uint_eq(priv->len, (unsigned long)stop-1);
     ck_assert_uint_ge(priv->capacity, priv->len);
 
     /* check that all remaining items are there, in right order */
@@ -185,7 +185,7 @@ START_TEST(test_remove_many)
     struct _tsarray_priv *priv = (struct _tsarray_priv *)a1;
     const int start = -1010;
     const int stop = 32010;
-    const unsigned long full_len = stop-start;
+    const unsigned long full_len = (unsigned long)(stop-start);
     const unsigned long len_after_remove = 10;
     const unsigned long remove_count = full_len - len_after_remove;
     unsigned long full_capacity;

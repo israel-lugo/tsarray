@@ -62,14 +62,14 @@ START_TEST(test_extend)
     ck_assert_int_eq(extend_result, 0);
 
     /* check a2 wasn't changed, then free it */
-    ck_assert_uint_eq(priv2->len, a2stop-a1stop);
+    ck_assert_uint_eq(priv2->len, (unsigned long)(a2stop-a1stop));
     ck_assert_ptr_eq(a2->items, a2_items);
     for (i=0; i<a2stop-a1stop; i++)
         ck_assert_int_eq(a2->items[i], i+a1stop);
     intarray_free(a2);
 
     /* check a1 was extended with the contents of a2 */
-    ck_assert_uint_eq(priv1->len, a2stop);
+    ck_assert_uint_eq(priv1->len, (unsigned long)a2stop);
     ck_assert_uint_ge(priv1->capacity, priv1->len);
 
     for (i=0; i<a2stop; i++)
@@ -165,7 +165,7 @@ START_TEST(test_extend_self_large)
     extend_result = intarray_extend(a1, a1);
     ck_assert_int_eq(extend_result, 0);
 
-    ck_assert_uint_eq(priv->len, 2*stop);
+    ck_assert_uint_eq(priv->len, 2*(unsigned long)stop);
     ck_assert_uint_ge(priv->capacity, priv->len);
     for (i=0; i<stop; i++)
         ck_assert_int_eq(a1->items[i], i);

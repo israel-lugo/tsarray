@@ -106,7 +106,7 @@ START_TEST(test_slice_some)
     const int stop = 10;
     const long slice_start = 4;
     const long slice_stop = 8;
-    const unsigned long expected_slice_len = slice_stop-slice_start;
+    const unsigned long expected_slice_len = (unsigned long)(slice_stop-slice_start);
     intarray *aslice;
     unsigned int i;
 
@@ -139,7 +139,7 @@ START_TEST(test_slice_some_reverse)
     const int stop = 10;
     const long slice_start = 8;
     const long slice_stop = 4;
-    const unsigned long expected_slice_len = slice_start-slice_stop;
+    const unsigned long expected_slice_len = (unsigned long)(slice_start-slice_stop);
     intarray *aslice;
     unsigned int i;
 
@@ -168,7 +168,7 @@ START_TEST(test_slice_some_step)
     const long slice_start = 4;
     const long slice_stop = 50;
     const long slice_step = 3;
-    const unsigned long expected_slice_len = (slice_stop - slice_start)/slice_step + 1;
+    const unsigned long expected_slice_len = (unsigned long)((slice_stop - slice_start)/slice_step) + 1;
     intarray *aslice;
     unsigned int i;
 
@@ -202,7 +202,7 @@ START_TEST(test_slice_some_step_reverse)
     const long slice_start = 50;
     const long slice_stop = 4;
     const long slice_step = -3;
-    const unsigned long expected_slice_len = (slice_start - slice_stop)/(-slice_step) + 1;
+    const unsigned long expected_slice_len = (unsigned long)((slice_start - slice_stop)/(-slice_step)) + 1;
     intarray *aslice;
     unsigned int i;
 
