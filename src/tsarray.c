@@ -178,12 +178,12 @@ static int tsarray_resize(struct _tsarray_priv *priv, unsigned long new_len)
 {
     const unsigned long old_len = priv->len;
     const size_t obj_size = priv->obj_size;
-    unsigned long capacity = priv->capacity;
+    const unsigned long old_capacity = priv->capacity;
 
     assert(ulong_fits_in_long(new_len));    /* must fit in signed long indices */
     assert(ulong_fits_in_long(old_len));
-    assert(ulong_fits_in_long(capacity));
-    assert(old_len <= capacity);
+    assert(ulong_fits_in_long(old_capacity));
+    assert(old_len <= old_capacity);
 
     /* check if there's anything to change */
     if (old_len == new_len)
@@ -196,11 +196,12 @@ static int tsarray_resize(struct _tsarray_priv *priv, unsigned long new_len)
     /* Only change capacity if new_len is outside the hysteresis range
      * (i.e. there is no more free space, or too much). This avoids
      * overreacting to multiple append/remove patterns. */
-    if (new_len > capacity || new_len < capacity/MIN_USAGE_RATIO)
+    if (new_len > old_capacity || new_len < old_capacity/MIN_USAGE_RATIO)
     {
         assert(MIN_MARGIN <= LONG_MAX - LONG_MAX/MARGIN_RATIO);
         /* can never overflow, as long as the assert above is true */
         unsigned long margin = new_len/MARGIN_RATIO + MIN_MARGIN;
+        unsigned long new_capacity;
         void *new_items;
 
         /* if the margin makes us overflow, don't use it (we know from
@@ -210,15 +211,15 @@ static int tsarray_resize(struct _tsarray_priv *priv, unsigned long new_len)
                 || unlikely(!can_size_mult(new_len+margin, obj_size)))
             margin = 0;
 
-        capacity = new_len + margin;
+        new_capacity = new_len + margin;
 
-        new_items = realloc(priv->pub.items, capacity*obj_size);
+        new_items = realloc(priv->pub.items, new_capacity*obj_size);
 
         if (unlikely(new_items == NULL))
             return TSARRAY_ENOMEM;
 
         priv->pub.items = new_items;
-        priv->capacity = capacity;
+        priv->capacity = new_capacity;
     }
 
     priv->len = new_len;
