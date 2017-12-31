@@ -98,6 +98,11 @@ START_TEST(test_can_add_within_long)
     ck_assert(!can_add_within_long(LONG_MAX, LONG_MAX));
     ck_assert(!can_add_within_long(LONG_MAX, LONG_MAX-1));
     ck_assert(!can_add_within_long(LONG_MAX/2, LONG_MAX/2 + 2));
+    ck_assert(!can_add_within_long(((unsigned long)LONG_MAX) + 1, 0));
+    ck_assert(!can_add_within_long(0, ((unsigned long)LONG_MAX) + 1));
+    ck_assert(!can_add_within_long(ULONG_MAX, 0));
+    ck_assert(!can_add_within_long(0, ULONG_MAX));
+    ck_assert(!can_add_within_long(ULONG_MAX, ULONG_MAX));
 }
 END_TEST
 
