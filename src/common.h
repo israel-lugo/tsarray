@@ -124,9 +124,9 @@ static inline int can_long_add(const long x, const long y)
 
 
 /*
- * Check whether two unsigned long can be added as longs, without overflowing.
+ * Check whether two unsigned long can be added without overflowing as longs.
  */
-static inline int can_add_as_long(const unsigned long x, const unsigned long y)
+static inline int can_add_within_long(const unsigned long x, const unsigned long y)
 {
     return likely(y <= LONG_MAX && x <= LONG_MAX && x <= LONG_MAX - y);
 }

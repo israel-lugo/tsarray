@@ -84,20 +84,20 @@ START_TEST(test_can_long_add)
 END_TEST
 
 
-START_TEST(test_can_add_as_long)
+START_TEST(test_can_add_within_long)
 {
-    ck_assert(can_add_as_long(0, 0));
-    ck_assert(can_add_as_long(1, 1));
-    ck_assert(can_add_as_long(0, LONG_MAX));
-    ck_assert(can_add_as_long(LONG_MAX, 0));
-    ck_assert(can_add_as_long(LONG_MAX-1, 1));
-    ck_assert(can_add_as_long(1, LONG_MAX-1));
-    ck_assert(can_add_as_long(LONG_MAX/2, LONG_MAX/2));
-    ck_assert(!can_add_as_long(LONG_MAX, 1));
-    ck_assert(!can_add_as_long(1, LONG_MAX));
-    ck_assert(!can_add_as_long(LONG_MAX, LONG_MAX));
-    ck_assert(!can_add_as_long(LONG_MAX, LONG_MAX-1));
-    ck_assert(!can_add_as_long(LONG_MAX/2, LONG_MAX/2 + 2));
+    ck_assert(can_add_within_long(0, 0));
+    ck_assert(can_add_within_long(1, 1));
+    ck_assert(can_add_within_long(0, LONG_MAX));
+    ck_assert(can_add_within_long(LONG_MAX, 0));
+    ck_assert(can_add_within_long(LONG_MAX-1, 1));
+    ck_assert(can_add_within_long(1, LONG_MAX-1));
+    ck_assert(can_add_within_long(LONG_MAX/2, LONG_MAX/2));
+    ck_assert(!can_add_within_long(LONG_MAX, 1));
+    ck_assert(!can_add_within_long(1, LONG_MAX));
+    ck_assert(!can_add_within_long(LONG_MAX, LONG_MAX));
+    ck_assert(!can_add_within_long(LONG_MAX, LONG_MAX-1));
+    ck_assert(!can_add_within_long(LONG_MAX/2, LONG_MAX/2 + 2));
 }
 END_TEST
 
@@ -206,7 +206,7 @@ Suite *internal_suite(void)
 
     tcase_add_test(tc_overflow, test_can_int_add);
     tcase_add_test(tc_overflow, test_can_long_add);
-    tcase_add_test(tc_overflow, test_can_add_as_long);
+    tcase_add_test(tc_overflow, test_can_add_within_long);
     tcase_add_test(tc_overflow, test_can_long_mult);
     tcase_add_test(tc_overflow, test_ulong_fits_in_long);
     tcase_add_test(tc_overflow, test_can_size_add);

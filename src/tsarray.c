@@ -206,7 +206,7 @@ static int tsarray_resize(struct _tsarray_priv *priv, unsigned long new_len)
 
         /* if the margin makes us overflow, don't use it (we know from
          * check above that at least new_len is addressable in bytes) */
-        if (unlikely(!can_add_as_long(new_len, margin))
+        if (unlikely(!can_add_within_long(new_len, margin))
                 || unlikely(new_len+margin > SIZE_MAX)
                 || unlikely(!can_size_mult(new_len+margin, obj_size)))
             margin = 0;
@@ -387,7 +387,7 @@ int tsarray_append(struct _tsarray_pub *tsarray, const void *object)
     assert(ulong_fits_in_long(old_len));
     assert(ulong_fits_in_long(priv->capacity));
 
-    if (unlikely(!can_add_as_long(old_len, 1)))
+    if (unlikely(!can_add_within_long(old_len, 1)))
         return TSARRAY_EOVERFLOW;
 
     retval = tsarray_resize(priv, old_len+1);
@@ -434,7 +434,7 @@ int tsarray_extend(struct _tsarray_pub *tsarray_dest,
     if (unlikely(priv_dest->obj_size != priv_src->obj_size))
         return TSARRAY_EINVAL;
 
-    if (unlikely(!can_add_as_long(dest_len, src_len)))
+    if (unlikely(!can_add_within_long(dest_len, src_len)))
         return TSARRAY_EOVERFLOW;
 
     new_len = dest_len + src_len;
