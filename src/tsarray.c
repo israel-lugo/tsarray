@@ -64,6 +64,7 @@ struct _tsarray_priv {
     size_t obj_size;
     unsigned long capacity;     /* keep <= LONG_MAX, as indices are signed */
     unsigned long len;          /* likewise */
+    unsigned long len_hint;    /* likewise */
 };
 
 
@@ -86,6 +87,14 @@ struct _tsarray_priv {
  * is shrunk to save memory.
  */
 #define MIN_USAGE_RATIO 2
+
+
+/*
+ * Estimated (assumed) standard deviation ratio for the length hint. Must
+ * be >= 2 to make sense. If we take the hint to be the mean value, a
+ * stddev of the entire mean throws off all the math.
+ */
+#define HINT_STDDEV_RATIO 3
 
 
 static inline void *get_nth_item(const void *items, long index,
@@ -115,9 +124,14 @@ unsigned long tsarray_len(const struct _tsarray_pub *tsarray)
  * Receives the size of the array's items. Returns a pointer to the newly
  * created tsarray, or NULL in case of error while allocating memory.
  */
-struct _tsarray_pub *tsarray_new(size_t obj_size)
+struct _tsarray_pub *tsarray_new(size_t obj_size, unsigned long len_hint)
 {
-    struct _tsarray_priv *priv = malloc(sizeof(struct _tsarray_priv));
+    struct _tsarray_priv *priv;
+
+    if (unlikely(!ulong_fits_in_long(len_hint)))
+        return NULL;
+
+    priv = malloc(sizeof(struct _tsarray_priv));
 
     if (unlikely(priv == NULL))
         return NULL;
@@ -126,6 +140,9 @@ struct _tsarray_pub *tsarray_new(size_t obj_size)
     priv->obj_size = obj_size;
     priv->capacity = 0;
     priv->len = 0;
+    priv->len_hint = len_hint;
+
+    /* TODO: do something to preallocate capacity if len_hint > 0 */
 
     return &priv->pub;
 }
@@ -197,6 +214,64 @@ static unsigned long calc_new_capacity(size_t obj_size,
         margin = 0;
 
     return new_len + margin;
+}
+
+
+/*
+ * TODO: Document this function. It's the version of calc_new_capacity but
+ * for tsarrays that have a hint. Also, we need to use it, in
+ * tsarray_resize.
+ */
+static unsigned long calc_new_capacity_with_hint(size_t obj_size,
+        unsigned long old_capacity, unsigned long new_len,
+        unsigned long len_hint)
+{
+    /* TODO: protect against overflows */
+    const unsigned long est_stddev = len_hint/HINT_STDDEV_RATIO;
+    const unsigned long one_sigma_low = len_hint - est_stddev;
+    const unsigned long one_sigma_high = len_hint + est_stddev;
+    assert(2*est_stddev <= len_hint);
+    const unsigned long two_sigma_low = len_hint - 2*est_stddev;
+
+    /* don't change capacity if there is enough free space, and capacity is
+     * within the hint margin or we're not wasting too much beyond new_len */
+    if (old_capacity >= new_len
+        && old_capacity >= two_sigma_low
+        && (old_capacity <= one_sigma_high
+            || old_capacity-new_len <= est_stddev))
+        return old_capacity;
+
+    if (new_len < two_sigma_low)
+        return two_sigma_low;
+
+    if (new_len < one_sigma_low)
+    {   /* two_sigma_low <= new_len < one_sigma_low: linear increase up to len_hint
+         * slope = (len_hint-two_sigma_low)/(one_sigma_low-two_sigma_low)
+         *       = (2*est_stddev) / est_stddev
+         *       = 2
+         * new_capacity = slope*(x1-x0) + y0
+         *              = 2*(new_len-two_sigma_low) + two_sigma_low
+         *              = 2*new_len - two_sigma_low
+         */
+        const unsigned long new_capacity = 2*new_len - two_sigma_low;
+        assert(new_capacity <= len_hint);
+        return new_capacity;
+    }
+
+    if (new_len < len_hint)
+    {   /* one_sigma_low <= new_len < len_hint: within one stddev of hint */
+        return len_hint;
+    }
+
+    /* larger than the hint; just return new_len with an added margin */
+
+    /* avoid overflowing with the margin in case new_len is really large */
+    if (unlikely(!can_add_within_long(new_len, 2))
+            || unlikely(new_len+2 > SIZE_MAX)
+            || unlikely(!can_size_mult(new_len+2, obj_size)))
+        return new_len;
+
+    return new_len + 2;
 }
 
 
