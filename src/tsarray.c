@@ -124,9 +124,11 @@ unsigned long tsarray_len(const struct _tsarray_pub *tsarray)
  * Receives the size of the array's items. Returns a pointer to the newly
  * created tsarray, or NULL in case of error while allocating memory.
  */
-struct _tsarray_pub *tsarray_new(size_t obj_size, unsigned long len_hint)
+struct _tsarray_pub *tsarray_new(size_t obj_size)
 {
     struct _tsarray_priv *priv;
+    unsigned long len_hint = 0;
+    /* TODO: len_hint must be an argument */
 
     if (unlikely(!ulong_fits_in_long(len_hint)))
         return NULL;
