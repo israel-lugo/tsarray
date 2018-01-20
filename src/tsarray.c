@@ -222,7 +222,9 @@ static unsigned long calc_new_capacity(size_t obj_size,
 /*
  * TODO: Document this function. It's the version of calc_new_capacity but
  * for tsarrays that have a hint. Also, we need to use it, in
- * tsarray_resize.
+ * tsarray_resize. We're using the three-sigma rule, to create two
+ * different margins around the length hint, which different behaviors
+ * depending on which margin new_len is in.
  */
 static unsigned long calc_new_capacity_with_hint(size_t obj_size,
         unsigned long old_capacity, unsigned long new_len,
