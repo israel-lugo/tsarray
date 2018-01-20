@@ -230,38 +230,38 @@ static unsigned long calc_new_capacity_with_hint(size_t obj_size,
 {
     /* TODO: protect against overflows */
     const unsigned long est_stddev = len_hint/HINT_STDDEV_RATIO;
-    const unsigned long one_sigma_low = len_hint - est_stddev;
-    const unsigned long one_sigma_high = len_hint + est_stddev;
+    const unsigned long one_sigma_below = len_hint - est_stddev;
+    const unsigned long one_sigma_above = len_hint + est_stddev;
     assert(2*est_stddev <= len_hint);
-    const unsigned long two_sigma_low = len_hint - 2*est_stddev;
+    const unsigned long two_sigma_below = len_hint - 2*est_stddev;
 
     /* don't change capacity if there is enough free space, and capacity is
      * within the hint margin or we're not wasting too much beyond new_len */
     if (old_capacity >= new_len
-        && old_capacity >= two_sigma_low
-        && (old_capacity <= one_sigma_high
+        && old_capacity >= two_sigma_below
+        && (old_capacity <= one_sigma_above
             || old_capacity-new_len <= est_stddev))
         return old_capacity;
 
-    if (new_len < two_sigma_low)
-        return two_sigma_low;
+    if (new_len < two_sigma_below)
+        return two_sigma_below;
 
-    if (new_len < one_sigma_low)
-    {   /* two_sigma_low <= new_len < one_sigma_low: linear increase up to len_hint
-         * slope = (len_hint-two_sigma_low)/(one_sigma_low-two_sigma_low)
+    if (new_len < one_sigma_below)
+    {   /* two_sigma_below <= new_len < one_sigma_below: linear increase up to len_hint
+         * slope = (len_hint-two_sigma_below)/(one_sigma_below-two_sigma_below)
          *       = (2*est_stddev) / est_stddev
          *       = 2
          * new_capacity = slope*(x1-x0) + y0
-         *              = 2*(new_len-two_sigma_low) + two_sigma_low
-         *              = 2*new_len - two_sigma_low
+         *              = 2*(new_len-two_sigma_below) + two_sigma_below
+         *              = 2*new_len - two_sigma_below
          */
-        const unsigned long new_capacity = 2*new_len - two_sigma_low;
+        const unsigned long new_capacity = 2*new_len - two_sigma_below;
         assert(new_capacity <= len_hint);
         return new_capacity;
     }
 
     if (new_len < len_hint)
-    {   /* one_sigma_low <= new_len < len_hint: within one stddev of hint */
+    {   /* one_sigma_below <= new_len < len_hint: within one stddev of hint */
         return len_hint;
     }
 
