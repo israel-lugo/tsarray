@@ -92,12 +92,16 @@ Given the above code, calling ``f(31, 42)`` would produce the following output::
   a1[0]: 42
 
 
-Contact
--------
+About the author
+----------------
 
 tsarray is developed by Israel G. Lugo <israel.lugo@lugosys.com>. Main
 repository for cloning, submitting issues and/or forking is at
 https://github.com/israel-lugo/tsarray
+
+I work for Google. My contributions to tsarray from 2018-01-08 onwards are
+copyright Google LLC. Please note that tsarray is not, however, an official
+Google product.
 
 
 License
