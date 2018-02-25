@@ -277,12 +277,12 @@ static unsigned long calc_new_capacity_with_hint(size_t obj_size,
     /* larger than the hint; just return new_len with an added margin */
 
     /* avoid overflowing with the margin in case new_len is really large */
-    if (unlikely(!can_add_within_long(new_len, 2))
-            || unlikely(new_len+2 > SIZE_MAX)
-            || unlikely(!can_size_mult(new_len+2, obj_size)))
+    if (unlikely(!can_add_within_long(new_len, MIN_MARGIN))
+            || unlikely(new_len+MIN_MARGIN > SIZE_MAX)
+            || unlikely(!can_size_mult(new_len+MIN_MARGIN, obj_size)))
         return new_len;
 
-    return new_len + 2;
+    return new_len + MIN_MARGIN;
 }
 
 
