@@ -99,6 +99,10 @@
 
 static inline int can_int_add(const int x, const int y) __ATTR_CONST;
 static inline int can_long_add(const long x, const long y) __ATTR_CONST;
+static inline int can_ulong_add(const unsigned long x,
+        const unsigned long y) __ATTR_CONST;
+static inline unsigned long ulong_add(const unsigned long x,
+        const unsigned long y) __ATTR_CONST;
 static inline int can_size_add(const size_t x, const size_t y) __ATTR_CONST;
 static inline int can_size_mult(const size_t x, const size_t y) __ATTR_CONST;
 
@@ -120,6 +124,27 @@ static inline int can_long_add(const long x, const long y)
 {
     return likely((y <= 0 || x <= LONG_MAX - y)
                   && (y >= 0 || x >= LONG_MIN - y));
+}
+
+
+/*
+ * Check whether two unsigned long can be added without overflowing.
+ */
+static inline int can_ulong_add(const unsigned long x, const unsigned long y)
+{
+    return x <= (ULONG_MAX - y);
+}
+
+
+/*
+ * Add two unsigned long, without overflowing.
+ *
+ * If the result of adding x and y would overflow, return ULONG_MAX.
+ */
+static inline unsigned long ulong_add(const unsigned long x,
+        const unsigned long y)
+{
+    return likely(can_ulong_add(x, y)) ? x + y : ULONG_MAX;
 }
 
 

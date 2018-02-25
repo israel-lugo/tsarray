@@ -236,7 +236,7 @@ static unsigned long calc_new_capacity_with_hint(size_t obj_size,
      * 1/HINT_STDDEV_RATIO of the length hint */
     const unsigned long est_stddev = len_hint/HINT_STDDEV_RATIO;
     const unsigned long one_stddev_low = len_hint - est_stddev;
-    const unsigned long one_stddev_high = len_hint + est_stddev;
+    const unsigned long one_stddev_high = ulong_add(len_hint, est_stddev);
     assert(2*est_stddev <= len_hint);
     const unsigned long two_stddev_low = len_hint - 2*est_stddev;
 
@@ -259,8 +259,12 @@ static unsigned long calc_new_capacity_with_hint(size_t obj_size,
          * new_capacity = slope*(x1-x0) + y0
          *              = 2*(new_len-two_stddev_low) + two_stddev_low
          *              = 2*new_len - two_stddev_low
+         *              = new_len - two_stddev_low + new_len
+         *                  (for overflow protection)
          */
-        const unsigned long new_capacity = 2*new_len - two_stddev_low;
+        const unsigned long new_capacity = ulong_add(new_len-two_stddev_low,
+                                                     new_len);
+        assert(new_capacity >= new_len);
         assert(new_capacity <= len_hint);
         return new_capacity;
     }
