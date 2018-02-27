@@ -226,11 +226,27 @@ static unsigned long calc_new_capacity(size_t obj_size,
  * different margins around the length hint, which different behaviors
  * depending on which margin new_len is in.
  */
+
+/*
+ * Calculate the new capacity for a tsarray with a length hint.
+ *
+ * Receives the object size, the old capacity, the desired new length and
+ * the length hint. Returns the appropriate new capacity.
+ *
+ * Both the desired new length and the length hint MUST be valid indices:
+ *  - they must fit in a signed long
+ *  - they must be addressable in bytes (x*obj_size <= SIZE_MAX)
+ */
 static unsigned long calc_new_capacity_with_hint(size_t obj_size,
         unsigned long old_capacity, unsigned long new_len,
         unsigned long len_hint)
 {
-    /* TODO: protect against overflows */
+    /* We're using the three-sigma rule to create ranges around the
+     * length hint, with different behaviors. Appropriate capacity is
+     * chosen according to the range in which new_len falls. */
+
+    assert(is_valid_index(new_len, obj_size));
+    assert(is_valid_index(len_hint, obj_size));
 
     /* to keep things simple, we estimate standard deviation to be
      * 1/HINT_STDDEV_RATIO of the length hint */
@@ -262,10 +278,10 @@ static unsigned long calc_new_capacity_with_hint(size_t obj_size,
          *              = new_len - two_stddev_low + new_len
          *                  (for overflow protection)
          */
-        const unsigned long new_capacity = ulong_add(new_len-two_stddev_low,
-                                                     new_len);
+        const unsigned long new_capacity = new_len - two_stddev_low + new_len;
         assert(new_capacity >= new_len);
         assert(new_capacity <= len_hint);
+        assert(is_valid_index(new_capacity, obj_size));
         return new_capacity;
     }
 
@@ -277,12 +293,13 @@ static unsigned long calc_new_capacity_with_hint(size_t obj_size,
     /* larger than the hint; just return new_len with an added margin */
 
     /* avoid overflowing with the margin in case new_len is really large */
-    if (unlikely(!can_add_within_long(new_len, MIN_MARGIN))
-            || unlikely(new_len+MIN_MARGIN > SIZE_MAX)
-            || unlikely(!can_size_mult(new_len+MIN_MARGIN, obj_size)))
-        return new_len;
+    unsigned long new_capacity = ulong_add_capped_long(new_len, MIN_MARGIN);
 
-    return new_len + MIN_MARGIN;
+    /* check if we can still address all bytes */
+    if (unlikely(!is_valid_index(new_capacity, obj_size)))
+        new_capacity = new_len;
+
+    return new_capacity;
 }
 
 

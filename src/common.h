@@ -103,6 +103,14 @@ static inline int can_ulong_add(const unsigned long x,
         const unsigned long y) __ATTR_CONST;
 static inline unsigned long ulong_add(const unsigned long x,
         const unsigned long y) __ATTR_CONST;
+static inline unsigned long can_add_ulong_within(const unsigned long x,
+        const unsigned long y, const unsigned long cap) __ATTR_CONST;
+static inline unsigned long ulong_add_capped(const unsigned long x,
+        const unsigned long y, const unsigned long cap) __ATTR_CONST;
+static inline int can_add_within_long(const unsigned long x,
+        const unsigned long y) __ATTR_CONST;
+static inline unsigned long ulong_add_capped_long(const unsigned long x,
+        const unsigned long y) __ATTR_CONST;
 static inline int can_size_add(const size_t x, const size_t y) __ATTR_CONST;
 static inline int can_size_mult(const size_t x, const size_t y) __ATTR_CONST;
 static inline int is_valid_index(const unsigned long x,
@@ -151,11 +159,43 @@ static inline unsigned long ulong_add(const unsigned long x,
 
 
 /*
+ * Check whether two unsigned long can be added within a cap.
+ */
+static inline unsigned long can_add_ulong_within(const unsigned long x,
+        const unsigned long y, const unsigned long cap)
+{
+    return y <= cap && x <= cap && x <= (cap - y);
+}
+
+
+/*
+ * Add two unsigned long, without going over a cap.
+ *
+ * If the result of adding x and y would be larger than cap, return cap.
+ */
+static inline unsigned long ulong_add_capped(const unsigned long x,
+        const unsigned long y, const unsigned long cap)
+{
+    return can_add_ulong_within(x, y, cap) ? x+y : cap;
+}
+
+
+/*
  * Check whether two unsigned long can be added without overflowing as longs.
  */
 static inline int can_add_within_long(const unsigned long x, const unsigned long y)
 {
-    return likely(y <= LONG_MAX && x <= LONG_MAX && x <= LONG_MAX - y);
+    return can_add_ulong_within(x, y, (unsigned long)LONG_MAX);
+}
+
+
+/*
+ * Add two unsigned long, capped at maximum long.
+ */
+static inline unsigned long ulong_add_capped_long(const unsigned long x,
+        const unsigned long y)
+{
+    return ulong_add_capped(x, y, (unsigned long)LONG_MAX);
 }
 
 
