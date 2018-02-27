@@ -105,6 +105,8 @@ static inline unsigned long ulong_add(const unsigned long x,
         const unsigned long y) __ATTR_CONST;
 static inline int can_size_add(const size_t x, const size_t y) __ATTR_CONST;
 static inline int can_size_mult(const size_t x, const size_t y) __ATTR_CONST;
+static inline int is_valid_index(const unsigned long x,
+        const size_t obj_size) __ATTR_CONST;
 
 
 /*
@@ -220,6 +222,20 @@ static inline int can_size_mult(const size_t x, const size_t y)
 static inline long size_to_long(const size_t x)
 {
     return (x > (unsigned long)LONG_MAX) ? LONG_MAX : (long)x;
+}
+
+
+/*
+ * Check if x is a valid index for an array of specified object size.
+ *
+ * Returns true if and only if x fits in a signed long, and represents an
+ * addressable byte position (x * obj_size <= SIZE_MAX).
+ */
+static inline int is_valid_index(const unsigned long x, const size_t obj_size)
+{
+    return (x < (unsigned long)LONG_MAX
+            && x <= SIZE_MAX
+            && can_size_mult(x, obj_size));
 }
 
 
