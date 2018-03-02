@@ -199,6 +199,35 @@ START_TEST(test_size_to_long)
 END_TEST
 
 
+START_TEST(test_is_valid_index)
+{
+    ck_assert(is_valid_index(0, 1));
+    ck_assert(is_valid_index(1, 1));
+    ck_assert(is_valid_index(17, 2));
+    ck_assert(is_valid_index(0, SIZE_MAX));
+    ck_assert(is_valid_index(0, SIZE_MAX-35));
+    ck_assert(is_valid_index(0, SIZE_MAX/4));
+    ck_assert(is_valid_index(3, SIZE_MAX/4));
+    ck_assert(!is_valid_index(1, SIZE_MAX-35));
+    ck_assert(!is_valid_index(1, SIZE_MAX));
+    ck_assert(!is_valid_index(4, SIZE_MAX/4));
+    ck_assert(!is_valid_index(((unsigned long)LONG_MAX)+1, 1));
+    ck_assert(!is_valid_index(SIZE_MAX, 1));
+    ck_assert(!is_valid_index(SIZE_MAX, 2));
+
+    if ((uintmax_t)SIZE_MAX > (uintmax_t)LONG_MAX)
+    {   /* size_t larger than long */
+        ck_assert(is_valid_index((unsigned long)LONG_MAX, 1));
+    }
+    else
+    {   /* size_t fits in long */
+        ck_assert(is_valid_index(SIZE_MAX, 1));
+        ck_assert(is_valid_index(SIZE_MAX-1, 2));
+    }
+}
+END_TEST
+
+
 Suite *internal_suite(void)
 {
     Suite *s;
@@ -216,6 +245,7 @@ Suite *internal_suite(void)
     tcase_add_test(tc_overflow, test_ulong_fits_in_long);
     tcase_add_test(tc_overflow, test_can_size_add);
     tcase_add_test(tc_overflow, test_can_size_mult);
+    tcase_add_test(tc_overflow, test_is_valid_index);
     suite_add_tcase(s, tc_overflow);
 
     tcase_add_test(tc_conversions, test_size_to_long);

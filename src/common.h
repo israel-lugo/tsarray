@@ -269,13 +269,15 @@ static inline long size_to_long(const size_t x)
  * Check if x is a valid index for an array of specified object size.
  *
  * Returns true if and only if x fits in a signed long, and represents an
- * addressable byte position (x * obj_size <= SIZE_MAX).
+ * addressable byte position (x * obj_size <= SIZE_MAX). obj_size MUST be
+ * non-zero.
  */
 static inline int is_valid_index(const unsigned long x, const size_t obj_size)
 {
-    return (x < (unsigned long)LONG_MAX
-            && x <= SIZE_MAX
-            && can_size_mult(x, obj_size));
+    return (x <= (unsigned long)LONG_MAX
+            && x <= SIZE_MAX                /* remaining math makes sense */
+            && can_size_mult(x, obj_size)           /* can address last item */
+            && SIZE_MAX - x*obj_size >= obj_size-1);    /* last item fits */
 }
 
 
