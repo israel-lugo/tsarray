@@ -1,6 +1,6 @@
 
 # programs built only with "make check"; don't include in "make all"
-check_PROGRAMS = check-internal check-tsarray check-tsarray_append check-tsarray_remove check-tsarray_extend check-tsarray_slice test-array test-sparse
+check_PROGRAMS = check-internal check-static check-tsarray check-tsarray_append check-tsarray_remove check-tsarray_extend check-tsarray_slice test-array test-sparse
 
 # run these programs as tests when doing "make check"
 TESTS = $(check_PROGRAMS)
@@ -16,6 +16,12 @@ tsarray_common_ldadd = $(libs_path)/libtsarray.la @CHECK_LIBS@
 check_internal_SOURCES = check-internal.c $(top_builddir)/src/common.h
 check_internal_CFLAGS = $(AM_CFLAGS) @CHECK_CFLAGS@
 check_internal_LDADD = @CHECK_LIBS@
+
+# Note this program does not link libtsarray.la; it is including the source
+# internally, to access static content
+check_static_SOURCES = check-static.c $(top_builddir)/src/common.h
+check_static_CFLAGS = $(AM_CFLAGS) @CHECK_CFLAGS@
+check_static_LDADD = @CHECK_LIBS@
 
 check_tsarray_SOURCES = check-tsarray.c $(tsarray_common_sources)
 check_tsarray_CFLAGS = $(tsarray_common_cflags)
