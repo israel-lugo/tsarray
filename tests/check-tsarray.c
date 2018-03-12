@@ -50,6 +50,43 @@ END_TEST
 
 
 /*
+ * Test creating a tsarray with length hint.
+ */
+START_TEST(test_create_with_hint)
+{
+    intarray *a = intarray_new_hint(0);
+    struct _tsarray_priv *priv = (struct _tsarray_priv *)a;
+
+    ck_assert_ptr_ne(a, NULL);
+    ck_assert_uint_eq(priv->len, 0);
+    ck_assert_uint_eq(priv->capacity, 0);
+    intarray_free(a);
+
+    a = intarray_new_hint(1);
+    priv = (struct _tsarray_priv *)a;
+
+    ck_assert_ptr_ne(a, NULL);
+    ck_assert_uint_eq(priv->len, 0);
+    ck_assert_uint_ge(priv->capacity, 1);
+    ck_assert_uint_le(priv->capacity, 10);
+    intarray_free(a);
+
+    a = intarray_new_hint(1000);
+    priv = (struct _tsarray_priv *)a;
+
+    ck_assert_ptr_ne(a, NULL);
+    ck_assert_uint_eq(priv->len, 0);
+    ck_assert_uint_ge(priv->capacity, 100);
+    ck_assert_uint_le(priv->capacity, 800);
+    intarray_free(a);
+
+    a = intarray_new_hint(ULONG_MAX);
+    ck_assert_ptr_eq(a, NULL);
+}
+END_TEST
+
+
+/*
  * Test getting the length of an empty tsarray.
  */
 START_TEST(test_len_empty)
@@ -215,6 +252,7 @@ Suite *tsarray_suite(void)
     tc_ops = tcase_with_a1_create("operations");
 
     tcase_add_test(tc_ops, test_create_and_free);
+    tcase_add_test(tc_ops, test_create_with_hint);
     tcase_add_test(tc_ops, test_from_array);
     tcase_add_test(tc_ops, test_from_array_empty);
     tcase_add_test(tc_ops, test_len_empty);

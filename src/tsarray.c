@@ -65,6 +65,7 @@ struct _tsarray_priv {
     unsigned long capacity;     /* keep <= LONG_MAX, as indices are signed */
     unsigned long len;          /* likewise */
     unsigned long len_hint;    /* likewise */
+    bool has_len_hint;
 };
 
 
@@ -103,6 +104,10 @@ static inline void *get_nth_item(const void *items, long index,
 static unsigned long calc_new_capacity(size_t obj_size,
         unsigned long old_capacity, unsigned long new_len) __ATTR_CONST;
 
+static unsigned long calc_new_capacity_with_hint(size_t obj_size,
+        unsigned long old_capacity, unsigned long new_len,
+        unsigned long len_hint) __ATTR_CONST;
+
 static int tsarray_resize(struct _tsarray_priv *priv, unsigned long new_len) __NON_NULL;
 
 static void set_items(void *items, long index, const void *objects,
@@ -126,14 +131,7 @@ unsigned long tsarray_len(const struct _tsarray_pub *tsarray)
  */
 struct _tsarray_pub *tsarray_new(size_t obj_size)
 {
-    struct _tsarray_priv *priv;
-    unsigned long len_hint = 0;
-    /* TODO: len_hint must be an argument */
-
-    if (unlikely(!ulong_fits_in_long(len_hint)))
-        return NULL;
-
-    priv = malloc(sizeof(struct _tsarray_priv));
+    struct _tsarray_priv *priv = malloc(sizeof(struct _tsarray_priv));
 
     if (unlikely(priv == NULL))
         return NULL;
@@ -142,9 +140,40 @@ struct _tsarray_pub *tsarray_new(size_t obj_size)
     priv->obj_size = obj_size;
     priv->capacity = 0;
     priv->len = 0;
+    priv->len_hint = false;
+
+    return &priv->pub;
+}
+
+
+/*
+ * Create a new, empty, tsarray, with a length hint.
+ *
+ * Receives the size of the array's items, and a hint for the array's most
+ * frequent expected length. Operations on the array will take the hint
+ * into account, optimizating for the most frequent length.
+ *
+ * Returns a pointer to the newly created tsarray, or NULL in case of error
+ * (invalid length hint, or unable to allocate memory).
+ */
+struct _tsarray_pub *tsarray_new_hint(size_t obj_size, unsigned long len_hint)
+{
+    if (unlikely(!is_valid_index(len_hint, obj_size)))
+        return NULL;
+
+    struct _tsarray_priv *priv = (struct _tsarray_priv *)tsarray_new(obj_size);
+    if (unlikely(priv == NULL))
+        return NULL;
+
+    priv->has_len_hint = true;
     priv->len_hint = len_hint;
 
-    /* TODO: do something to preallocate capacity if len_hint > 0 */
+    int retval = tsarray_resize(priv, 0);
+    if (unlikely(retval != 0))
+    {
+        tsarray_free((struct _tsarray_pub *)priv);
+        return NULL;
+    }
 
     return &priv->pub;
 }
@@ -322,16 +351,15 @@ static int tsarray_resize(struct _tsarray_priv *priv, unsigned long new_len)
     assert(ulong_fits_in_long(old_capacity));
     assert(old_len <= old_capacity);
 
-    /* check if there's anything to change */
-    if (old_len == new_len)
-        return 0;
-
     /* asking for more objects than we can address? */
     if (unlikely(new_len > SIZE_MAX || !can_size_mult(new_len, obj_size)))
         return TSARRAY_ENOMEM;
 
-    /* update capacity, if necessary */
-    new_capacity = calc_new_capacity(obj_size, old_capacity, new_len);
+    new_capacity = priv->has_len_hint
+        ?  calc_new_capacity_with_hint(obj_size, old_capacity, new_len,
+                                       priv->len_hint)
+        : calc_new_capacity(obj_size, old_capacity, new_len);
+
     if (new_capacity != old_capacity)
     {
         void *new_items = realloc(priv->pub.items, new_capacity*obj_size);
