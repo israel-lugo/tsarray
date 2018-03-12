@@ -336,7 +336,8 @@ static int tsarray_resize(struct _tsarray_priv *priv, unsigned long new_len)
     {
         void *new_items = realloc(priv->pub.items, new_capacity*obj_size);
 
-        if (unlikely(new_items == NULL))
+        /* if we asked for 0 bytes, realloc may legitimately return NULL */
+        if (unlikely(new_items == NULL && new_capacity != 0))
             return TSARRAY_ENOMEM;
 
         priv->pub.items = new_items;
