@@ -182,6 +182,10 @@ START_TEST(test_calc_new_capacity_hint_delta)
 
     new_cap = calc_new_capacity_with_hint(sizeof(int), 0, 1, 1000);
     ck_assert_uint_ge(new_cap, 100);
+
+    new_cap = calc_new_capacity_with_hint(sizeof(int), 10000, 44, 1000);
+    ck_assert_uint_ge(new_cap, 100);
+    ck_assert_uint_le(new_cap, 800);
 }
 END_TEST
 
