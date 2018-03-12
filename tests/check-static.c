@@ -68,6 +68,19 @@ static void check_new_capacity(size_t obj_size, unsigned long old_capacity,
 }
 
 
+static void check_new_capacity_with_hint(size_t obj_size,
+        unsigned long old_capacity, unsigned long new_len,
+        unsigned long len_hint)
+{
+    unsigned long new_cap = calc_new_capacity_with_hint(obj_size,
+            old_capacity, new_len, len_hint);
+
+    ck_assert_uint_le(new_cap, SIZE_MAX);
+    ck_assert(can_size_mult(new_cap, obj_size));
+    ck_assert_uint_ge(new_cap, new_len);
+}
+
+
 START_TEST(test_calc_new_capacity_incr)
 {
     check_new_capacity(sizeof(int), 0, 0);
@@ -113,7 +126,64 @@ START_TEST(test_calc_new_capacity_hysteresis)
 END_TEST
 
 
-/* TODO: Equivalent tests for calc_new_capacity_with_hint */
+START_TEST(test_calc_new_capacity_hint_incr)
+{
+    check_new_capacity_with_hint(sizeof(int), 0, 0, 0);
+    check_new_capacity_with_hint(sizeof(int), 0, 0, 1);
+    check_new_capacity_with_hint(sizeof(int), 0, 1, 0);
+    check_new_capacity_with_hint(sizeof(int), 0, 100, 0);
+    check_new_capacity_with_hint(sizeof(int), 0, 0, 100);
+    check_new_capacity_with_hint(sizeof(int), 0, 1, 1);
+    check_new_capacity_with_hint(sizeof(int), 0, 1, 100);
+    check_new_capacity_with_hint(sizeof(int), 0, 1000, 100);
+    check_new_capacity_with_hint(sizeof(int), 0, 1000, 2000);
+    check_new_capacity_with_hint(sizeof(int), 1, 1, 1);
+    check_new_capacity_with_hint(sizeof(int), 1, 2, 10);
+    check_new_capacity_with_hint(sizeof(int), 1, 1000, 1000);
+    check_new_capacity_with_hint(sizeof(int), 1000, 2000, 3003);
+    check_new_capacity_with_hint(1, 1000, 2000, 2019);
+    check_new_capacity_with_hint(1, 1000, 2000, MAX_INDEX);
+    check_new_capacity_with_hint(1000, 32, 60, 57);
+    check_new_capacity_with_hint(MAX_INDEX/128, 4, 128, 2);
+    check_new_capacity_with_hint(MAX_INDEX/128, 4, 128, 128);
+}
+END_TEST
+
+
+START_TEST(test_calc_new_capacity_hint_decr)
+{
+    check_new_capacity_with_hint(sizeof(int), 2, 1, 3);
+    check_new_capacity_with_hint(sizeof(int), 1, 0, 2);
+    check_new_capacity_with_hint(sizeof(int), 1, 0, 0);
+    check_new_capacity_with_hint(sizeof(int), 1, 0, 10000);
+    check_new_capacity_with_hint(sizeof(int), 1000, 0, 1000);
+    check_new_capacity_with_hint(sizeof(int), 2000, 1000, 10000);
+    check_new_capacity_with_hint(1, 2000, 1000, 1011);
+    check_new_capacity_with_hint(1000, 60, 32, 57);
+    check_new_capacity_with_hint(MAX_INDEX/128, 128, 4, 16);
+    check_new_capacity_with_hint(MAX_INDEX/128, 128, 4, 128);
+}
+END_TEST
+
+
+START_TEST(test_calc_new_capacity_hint_delta)
+{
+    unsigned long old_cap;
+    unsigned long new_cap;
+
+    old_cap = 30000;
+    new_cap = calc_new_capacity_with_hint(2, old_cap, old_cap-100, old_cap);
+    ck_assert_uint_eq(new_cap, old_cap);
+
+    old_cap = MAX_INDEX/sizeof(int);
+    new_cap = calc_new_capacity_with_hint(sizeof(int), old_cap, old_cap-1,
+                                          old_cap);
+    ck_assert_uint_eq(new_cap, old_cap);
+
+    new_cap = calc_new_capacity_with_hint(sizeof(int), 0, 1, 1000);
+    ck_assert_uint_ge(new_cap, 100);
+}
+END_TEST
 
 
 Suite *static_suite(void)
@@ -129,6 +199,9 @@ Suite *static_suite(void)
     tcase_add_test(tc_static, test_calc_new_capacity_incr);
     tcase_add_test(tc_static, test_calc_new_capacity_decr);
     tcase_add_test(tc_static, test_calc_new_capacity_hysteresis);
+    tcase_add_test(tc_static, test_calc_new_capacity_hint_incr);
+    tcase_add_test(tc_static, test_calc_new_capacity_hint_decr);
+    tcase_add_test(tc_static, test_calc_new_capacity_hint_delta);
     suite_add_tcase(s, tc_static);
 
     return s;
