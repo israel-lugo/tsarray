@@ -190,6 +190,9 @@ START_TEST(test_calc_new_capacity_hint_delta)
 END_TEST
 
 
+/* TODO: Test tsarray_resize() and any other important static functions. */
+
+
 Suite *static_suite(void)
 {
     Suite *s;
