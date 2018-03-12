@@ -97,7 +97,7 @@ START_TEST(test_calc_new_capacity_decr)
 END_TEST
 
 
-START_TEST(test_calc_new_capacity_hystersis)
+START_TEST(test_calc_new_capacity_hysteresis)
 {
     unsigned long old_cap;
     unsigned long new_cap;
@@ -128,7 +128,7 @@ Suite *static_suite(void)
     tcase_add_test(tc_static, test_new_of_len);
     tcase_add_test(tc_static, test_calc_new_capacity_incr);
     tcase_add_test(tc_static, test_calc_new_capacity_decr);
-    tcase_add_test(tc_static, test_calc_new_capacity_hystersis);
+    tcase_add_test(tc_static, test_calc_new_capacity_hysteresis);
     suite_add_tcase(s, tc_static);
 
     return s;
