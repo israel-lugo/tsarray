@@ -48,6 +48,23 @@
 #endif
 
 
+#ifdef HAVE_STDBOOL_H
+#  include <stdbool.h>
+#else
+#  ifndef HAVE__BOOL
+#    ifdef __cplusplus
+typedef bool _Bool;
+#    else
+#      define _Bool signed char
+#    endif
+#  endif
+#  define bool _Bool
+#  define false 0
+#  define true 1
+#  define __bool_true_false_are_defined 1
+#endif
+
+
 #if !defined(DEBUG) || !DEBUG
 #  define NDEBUG 1
 #endif
@@ -99,8 +116,22 @@
 
 static inline int can_int_add(const int x, const int y) __ATTR_CONST;
 static inline int can_long_add(const long x, const long y) __ATTR_CONST;
+static inline int can_ulong_add(const unsigned long x,
+        const unsigned long y) __ATTR_CONST;
+static inline unsigned long ulong_add(const unsigned long x,
+        const unsigned long y) __ATTR_CONST;
+static inline unsigned long can_add_ulong_within(const unsigned long x,
+        const unsigned long y, const unsigned long cap) __ATTR_CONST;
+static inline unsigned long ulong_add_capped(const unsigned long x,
+        const unsigned long y, const unsigned long cap) __ATTR_CONST;
+static inline int can_add_within_long(const unsigned long x,
+        const unsigned long y) __ATTR_CONST;
+static inline unsigned long ulong_add_capped_long(const unsigned long x,
+        const unsigned long y) __ATTR_CONST;
 static inline int can_size_add(const size_t x, const size_t y) __ATTR_CONST;
 static inline int can_size_mult(const size_t x, const size_t y) __ATTR_CONST;
+static inline int is_valid_index(const unsigned long x,
+        const size_t obj_size) __ATTR_CONST;
 
 
 /*
@@ -124,11 +155,64 @@ static inline int can_long_add(const long x, const long y)
 
 
 /*
+ * Check whether two unsigned long can be added without overflowing.
+ */
+static inline int can_ulong_add(const unsigned long x, const unsigned long y)
+{
+    return x <= (ULONG_MAX - y);
+}
+
+
+/*
+ * Add two unsigned long, without overflowing.
+ *
+ * If the result of adding x and y would overflow, return ULONG_MAX.
+ */
+static inline unsigned long ulong_add(const unsigned long x,
+        const unsigned long y)
+{
+    return likely(can_ulong_add(x, y)) ? x + y : ULONG_MAX;
+}
+
+
+/*
+ * Check whether two unsigned long can be added within a cap.
+ */
+static inline unsigned long can_add_ulong_within(const unsigned long x,
+        const unsigned long y, const unsigned long cap)
+{
+    return y <= cap && x <= cap && x <= (cap - y);
+}
+
+
+/*
+ * Add two unsigned long, without going over a cap.
+ *
+ * If the result of adding x and y would be larger than cap, return cap.
+ */
+static inline unsigned long ulong_add_capped(const unsigned long x,
+        const unsigned long y, const unsigned long cap)
+{
+    return can_add_ulong_within(x, y, cap) ? x+y : cap;
+}
+
+
+/*
  * Check whether two unsigned long can be added without overflowing as longs.
  */
 static inline int can_add_within_long(const unsigned long x, const unsigned long y)
 {
-    return likely(y <= LONG_MAX && x <= LONG_MAX && x <= LONG_MAX - y);
+    return can_add_ulong_within(x, y, (unsigned long)LONG_MAX);
+}
+
+
+/*
+ * Add two unsigned long, capped at maximum long.
+ */
+static inline unsigned long ulong_add_capped_long(const unsigned long x,
+        const unsigned long y)
+{
+    return ulong_add_capped(x, y, (unsigned long)LONG_MAX);
 }
 
 
@@ -195,6 +279,22 @@ static inline int can_size_mult(const size_t x, const size_t y)
 static inline long size_to_long(const size_t x)
 {
     return (x > (unsigned long)LONG_MAX) ? LONG_MAX : (long)x;
+}
+
+
+/*
+ * Check if x is a valid index for an array of specified object size.
+ *
+ * Returns true if and only if x fits in a signed long, and represents an
+ * addressable byte position (x * obj_size <= SIZE_MAX). obj_size MUST be
+ * non-zero.
+ */
+static inline int is_valid_index(const unsigned long x, const size_t obj_size)
+{
+    return (x <= (unsigned long)LONG_MAX
+            && x <= SIZE_MAX                /* remaining math makes sense */
+            && can_size_mult(x, obj_size)           /* can address last item */
+            && SIZE_MAX - x*obj_size >= obj_size-1);    /* last item fits */
 }
 
 

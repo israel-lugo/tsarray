@@ -27,6 +27,7 @@ PKG_CHECK_MODULES([CHECK], [check])
 
 # Checks for header files.
 AC_CHECK_HEADERS([limits.h stddef.h stdint.h stdlib.h string.h])
+AC_HEADER_STDBOOL
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE

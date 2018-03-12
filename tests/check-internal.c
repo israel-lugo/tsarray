@@ -145,6 +145,69 @@ START_TEST(test_ulong_fits_in_long)
 END_TEST
 
 
+START_TEST(test_can_add_ulong_within)
+{
+    ck_assert(can_add_ulong_within(0, 0, 10));
+    ck_assert(can_add_ulong_within(0, 1, 10));
+    ck_assert(can_add_ulong_within(1, 0, 10));
+    ck_assert(can_add_ulong_within(1, 1, 10));
+    ck_assert(can_add_ulong_within(10, 0, 10));
+    ck_assert(can_add_ulong_within(0, 10, 10));
+    ck_assert(!can_add_ulong_within(10, 1, 10));
+    ck_assert(!can_add_ulong_within(1, 10, 10));
+    ck_assert(can_add_ulong_within((unsigned long)LONG_MAX, 0, (unsigned long)LONG_MAX));
+    ck_assert(can_add_ulong_within(0, (unsigned long)LONG_MAX, (unsigned long)LONG_MAX));
+    ck_assert(!can_add_ulong_within((unsigned long)LONG_MAX, 1, (unsigned long)LONG_MAX));
+    ck_assert(!can_add_ulong_within(1, (unsigned long)LONG_MAX, (unsigned long)LONG_MAX));
+    ck_assert(can_add_ulong_within((unsigned long)LONG_MAX-1, 0, (unsigned long)LONG_MAX));
+    ck_assert(can_add_ulong_within((unsigned long)LONG_MAX-1, 1, (unsigned long)LONG_MAX));
+    ck_assert(can_add_ulong_within(ULONG_MAX, 0, ULONG_MAX));
+    ck_assert(!can_add_ulong_within(ULONG_MAX, 0, (unsigned long)LONG_MAX));
+    ck_assert(!can_add_ulong_within(ULONG_MAX, ULONG_MAX, (unsigned long)LONG_MAX));
+}
+END_TEST
+
+
+START_TEST(test_ulong_add_capped)
+{
+    ck_assert_uint_eq(ulong_add_capped(0, 0, 10), 0);
+    ck_assert_uint_eq(ulong_add_capped(0, 1, 10), 1);
+    ck_assert_uint_eq(ulong_add_capped(1, 0, 10), 1);
+    ck_assert_uint_eq(ulong_add_capped(1, 1, 10), 2);
+    ck_assert_uint_eq(ulong_add_capped(10, 0, 10), 10);
+    ck_assert_uint_eq(ulong_add_capped(0, 10, 10), 10);
+    ck_assert_uint_eq(ulong_add_capped(10, 1, 10), 10);
+    ck_assert_uint_eq(ulong_add_capped(1, 10, 10), 10);
+    ck_assert_uint_eq(ulong_add_capped((unsigned long)LONG_MAX, 0, (unsigned long)LONG_MAX), (unsigned long)LONG_MAX);
+    ck_assert_uint_eq(ulong_add_capped(0, (unsigned long)LONG_MAX, (unsigned long)LONG_MAX), (unsigned long)LONG_MAX);
+    ck_assert_uint_eq(ulong_add_capped((unsigned long)LONG_MAX, 1, (unsigned long)LONG_MAX), (unsigned long)LONG_MAX);
+    ck_assert_uint_eq(ulong_add_capped(1, (unsigned long)LONG_MAX, (unsigned long)LONG_MAX), (unsigned long)LONG_MAX);
+    ck_assert_uint_eq(ulong_add_capped((unsigned long)LONG_MAX-1, 0, (unsigned long)LONG_MAX), (unsigned long)LONG_MAX-1);
+    ck_assert_uint_eq(ulong_add_capped((unsigned long)LONG_MAX-1, 1, (unsigned long)LONG_MAX), (unsigned long)LONG_MAX);
+    ck_assert_uint_eq(ulong_add_capped((unsigned long)LONG_MAX, (unsigned long)LONG_MAX, (unsigned long)LONG_MAX), (unsigned long)LONG_MAX);
+    ck_assert_uint_eq(ulong_add_capped(ULONG_MAX, ULONG_MAX, (unsigned long)LONG_MAX), (unsigned long)LONG_MAX);
+}
+END_TEST
+
+
+START_TEST(test_ulong_add_capped_long)
+{
+    ck_assert_uint_eq(ulong_add_capped_long(0, 0), 0);
+    ck_assert_uint_eq(ulong_add_capped_long(0, 1), 1);
+    ck_assert_uint_eq(ulong_add_capped_long(1, 0), 1);
+    ck_assert_uint_eq(ulong_add_capped_long(1, 1), 2);
+    ck_assert_uint_eq(ulong_add_capped_long((unsigned long)LONG_MAX, 0), (unsigned long)LONG_MAX);
+    ck_assert_uint_eq(ulong_add_capped_long(0, (unsigned long)LONG_MAX), (unsigned long)LONG_MAX);
+    ck_assert_uint_eq(ulong_add_capped_long((unsigned long)LONG_MAX, 1), (unsigned long)LONG_MAX);
+    ck_assert_uint_eq(ulong_add_capped_long(1, (unsigned long)LONG_MAX), (unsigned long)LONG_MAX);
+    ck_assert_uint_eq(ulong_add_capped_long((unsigned long)LONG_MAX-1, 0), (unsigned long)LONG_MAX-1);
+    ck_assert_uint_eq(ulong_add_capped_long((unsigned long)LONG_MAX-1, 1), (unsigned long)LONG_MAX);
+    ck_assert_uint_eq(ulong_add_capped_long((unsigned long)LONG_MAX, (unsigned long)LONG_MAX), (unsigned long)LONG_MAX);
+    ck_assert_uint_eq(ulong_add_capped_long((unsigned long)ULONG_MAX, (unsigned long)ULONG_MAX), (unsigned long)LONG_MAX);
+}
+END_TEST
+
+
 START_TEST(test_can_size_add)
 {
     ck_assert(can_size_add(0, 0));
@@ -199,6 +262,35 @@ START_TEST(test_size_to_long)
 END_TEST
 
 
+START_TEST(test_is_valid_index)
+{
+    ck_assert(is_valid_index(0, 1));
+    ck_assert(is_valid_index(1, 1));
+    ck_assert(is_valid_index(17, 2));
+    ck_assert(is_valid_index(0, SIZE_MAX));
+    ck_assert(is_valid_index(0, SIZE_MAX-35));
+    ck_assert(is_valid_index(0, SIZE_MAX/4));
+    ck_assert(is_valid_index(3, SIZE_MAX/4));
+    ck_assert(!is_valid_index(1, SIZE_MAX-35));
+    ck_assert(!is_valid_index(1, SIZE_MAX));
+    ck_assert(!is_valid_index(4, SIZE_MAX/4));
+    ck_assert(!is_valid_index(((unsigned long)LONG_MAX)+1, 1));
+    ck_assert(!is_valid_index(SIZE_MAX, 1));
+    ck_assert(!is_valid_index(SIZE_MAX, 2));
+
+    if ((uintmax_t)SIZE_MAX > (uintmax_t)LONG_MAX)
+    {   /* size_t larger than long */
+        ck_assert(is_valid_index((unsigned long)LONG_MAX, 1));
+    }
+    else
+    {   /* size_t fits in long */
+        ck_assert(is_valid_index(SIZE_MAX, 1));
+        ck_assert(is_valid_index(SIZE_MAX-1, 2));
+    }
+}
+END_TEST
+
+
 Suite *internal_suite(void)
 {
     Suite *s;
@@ -216,9 +308,13 @@ Suite *internal_suite(void)
     tcase_add_test(tc_overflow, test_ulong_fits_in_long);
     tcase_add_test(tc_overflow, test_can_size_add);
     tcase_add_test(tc_overflow, test_can_size_mult);
+    tcase_add_test(tc_overflow, test_is_valid_index);
     suite_add_tcase(s, tc_overflow);
 
     tcase_add_test(tc_conversions, test_size_to_long);
+    tcase_add_test(tc_conversions, test_can_add_ulong_within);
+    tcase_add_test(tc_conversions, test_ulong_add_capped);
+    tcase_add_test(tc_conversions, test_ulong_add_capped_long);
     suite_add_tcase(s, tc_conversions);
 
     return s;

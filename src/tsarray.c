@@ -64,6 +64,8 @@ struct _tsarray_priv {
     size_t obj_size;
     unsigned long capacity;     /* keep <= LONG_MAX, as indices are signed */
     unsigned long len;          /* likewise */
+    unsigned long len_hint;    /* likewise */
+    bool has_len_hint;
 };
 
 
@@ -88,8 +90,23 @@ struct _tsarray_priv {
 #define MIN_USAGE_RATIO 2
 
 
+/*
+ * Estimated (assumed) standard deviation ratio for the length hint. Must
+ * be >= 2 to make sense. If we take the hint to be the mean value, a
+ * stddev of the entire mean throws off all the math.
+ */
+#define HINT_STDDEV_RATIO 3
+
+
 static inline void *get_nth_item(const void *items, long index,
         size_t obj_size) __ATTR_CONST __NON_NULL;
+
+static unsigned long calc_new_capacity(size_t obj_size,
+        unsigned long old_capacity, unsigned long new_len) __ATTR_CONST;
+
+static unsigned long calc_new_capacity_with_hint(size_t obj_size,
+        unsigned long old_capacity, unsigned long new_len,
+        unsigned long len_hint) __ATTR_CONST;
 
 static int tsarray_resize(struct _tsarray_priv *priv, unsigned long new_len) __NON_NULL;
 
@@ -123,6 +140,40 @@ struct _tsarray_pub *tsarray_new(size_t obj_size)
     priv->obj_size = obj_size;
     priv->capacity = 0;
     priv->len = 0;
+    priv->len_hint = false;
+
+    return &priv->pub;
+}
+
+
+/*
+ * Create a new, empty, tsarray, with a length hint.
+ *
+ * Receives the size of the array's items, and a hint for the array's most
+ * frequent expected length. Operations on the array will take the hint
+ * into account, optimizating for the most frequent length.
+ *
+ * Returns a pointer to the newly created tsarray, or NULL in case of error
+ * (invalid length hint, or unable to allocate memory).
+ */
+struct _tsarray_pub *tsarray_new_hint(size_t obj_size, unsigned long len_hint)
+{
+    if (unlikely(!is_valid_index(len_hint, obj_size)))
+        return NULL;
+
+    struct _tsarray_priv *priv = (struct _tsarray_priv *)tsarray_new(obj_size);
+    if (unlikely(priv == NULL))
+        return NULL;
+
+    priv->has_len_hint = true;
+    priv->len_hint = len_hint;
+
+    int retval = tsarray_resize(priv, 0);
+    if (unlikely(retval != 0))
+    {
+        tsarray_free((struct _tsarray_pub *)priv);
+        return NULL;
+    }
 
     return &priv->pub;
 }
@@ -160,6 +211,120 @@ static struct _tsarray_priv *_tsarray_new_of_len(size_t obj_size, unsigned long 
 
 
 /*
+ * Calculate the new capacity for a tsarray of a given new length.
+ *
+ * Receives the object size, the old capacity and the desired new length.
+ * Returns the appropriate new capacity.
+ *
+ * The desired new length MUST be a valid index, i.e.:
+ *  - it must fit in a signed long
+ *  - it must be addressable in bytes (new_len*obj_size <= SIZE_MAX)
+ */
+static unsigned long calc_new_capacity(size_t obj_size,
+        unsigned long old_capacity, unsigned long new_len)
+{
+    unsigned long margin;
+
+    assert(ulong_fits_in_long(new_len));
+    assert(new_len <= SIZE_MAX && can_size_mult(new_len, obj_size));
+
+    /* Don't change capacity if new_len is within the hysteresis range
+     * (i.e. there is still free space, and not too much). This avoids
+     * overreacting to multiple append/remove patterns. */
+    if (new_len <= old_capacity && new_len >= old_capacity/MIN_USAGE_RATIO)
+        return old_capacity;
+
+    assert(MIN_MARGIN <= LONG_MAX - LONG_MAX/MARGIN_RATIO);
+    /* can never overflow, as long as the assert above is true */
+    margin = new_len/MARGIN_RATIO + MIN_MARGIN;
+
+    /* if the margin makes us overflow, don't use it */
+    if (unlikely(!can_add_within_long(new_len, margin))
+            || unlikely(new_len+margin > SIZE_MAX)
+            || unlikely(!can_size_mult(new_len+margin, obj_size)))
+        margin = 0;
+
+    return new_len + margin;
+}
+
+
+/*
+ * Calculate the new capacity for a tsarray with a length hint.
+ *
+ * Receives the object size, the old capacity, the desired new length and
+ * the length hint. Returns the appropriate new capacity.
+ *
+ * Both the desired new length and the length hint MUST be valid indices:
+ *  - they must fit in a signed long
+ *  - they must be addressable in bytes (x*obj_size <= SIZE_MAX)
+ */
+static unsigned long calc_new_capacity_with_hint(size_t obj_size,
+        unsigned long old_capacity, unsigned long new_len,
+        unsigned long len_hint)
+{
+    /* We're using the three-sigma rule to create ranges around the
+     * length hint, with different behaviors. Appropriate capacity is
+     * chosen according to the range in which new_len falls. */
+
+    assert(is_valid_index(new_len, obj_size));
+    assert(is_valid_index(len_hint, obj_size));
+
+    /* to keep things simple, we estimate standard deviation to be
+     * 1/HINT_STDDEV_RATIO of the length hint */
+    const unsigned long est_stddev = len_hint/HINT_STDDEV_RATIO;
+    const unsigned long one_stddev_low = len_hint - est_stddev;
+    const unsigned long one_stddev_high = ulong_add(len_hint, est_stddev);
+    assert(2*est_stddev <= len_hint);
+    const unsigned long two_stddev_low = len_hint - 2*est_stddev;
+
+    /* do we need to resize at all? */
+    if (old_capacity >= new_len                 /* enough free space */
+        && old_capacity >= two_stddev_low       /* not too far below hint */
+        && (old_capacity <= one_stddev_high     /* not too far above hint */
+            || old_capacity-new_len <= est_stddev)) /* not wasting too much */
+        return old_capacity;
+
+    /* don't shrink too far below length hint */
+    if (new_len < two_stddev_low)
+        return two_stddev_low;
+
+    if (new_len < one_stddev_low)
+    {   /* two_stddev_low <= new_len < one_stddev_low: linear increase up to len_hint
+         * slope = (len_hint-two_stddev_low)/(one_stddev_low-two_stddev_low)
+         *       = (2*est_stddev) / est_stddev
+         *       = 2
+         * new_capacity = slope*(x1-x0) + y0
+         *              = 2*(new_len-two_stddev_low) + two_stddev_low
+         *              = 2*new_len - two_stddev_low
+         *              = new_len - two_stddev_low + new_len
+         *                  (for overflow protection)
+         */
+        const unsigned long new_capacity = new_len - two_stddev_low + new_len;
+        assert(new_capacity >= new_len);
+        assert(new_capacity <= len_hint);
+        assert(is_valid_index(new_capacity, obj_size));
+        return new_capacity;
+    }
+
+    if (new_len < len_hint)
+    {   /* one_stddev_low <= new_len < len_hint: within one stddev of hint */
+        return len_hint;
+    }
+
+    /* larger than the hint; just return new_len with an added margin */
+
+    /* avoid overflowing with the margin in case new_len is really large */
+    unsigned long new_capacity = ulong_add_capped_long(new_len, MIN_MARGIN);
+
+    /* check if we can still address all bytes */
+    if (unlikely(!is_valid_index(new_capacity, obj_size)))
+        new_capacity = new_len;
+
+    return new_capacity;
+}
+
+
+/*
  * Sets a tsarray's length, adjusting its capacity if necessary.
  *
  * Receives a private tsarray descriptor and the new length. Sets the
@@ -179,43 +344,28 @@ static int tsarray_resize(struct _tsarray_priv *priv, unsigned long new_len)
     const unsigned long old_len = priv->len;
     const size_t obj_size = priv->obj_size;
     const unsigned long old_capacity = priv->capacity;
+    unsigned long new_capacity;
 
     assert(ulong_fits_in_long(new_len));    /* must fit in signed long indices */
     assert(ulong_fits_in_long(old_len));
     assert(ulong_fits_in_long(old_capacity));
     assert(old_len <= old_capacity);
 
-    /* check if there's anything to change */
-    if (old_len == new_len)
-        return 0;
-
     /* asking for more objects than we can address? */
     if (unlikely(new_len > SIZE_MAX || !can_size_mult(new_len, obj_size)))
         return TSARRAY_ENOMEM;
 
-    /* Only change capacity if new_len is outside the hysteresis range
-     * (i.e. there is no more free space, or too much). This avoids
-     * overreacting to multiple append/remove patterns. */
-    if (new_len > old_capacity || new_len < old_capacity/MIN_USAGE_RATIO)
+    new_capacity = priv->has_len_hint
+        ?  calc_new_capacity_with_hint(obj_size, old_capacity, new_len,
+                                       priv->len_hint)
+        : calc_new_capacity(obj_size, old_capacity, new_len);
+
+    if (new_capacity != old_capacity)
     {
-        assert(MIN_MARGIN <= LONG_MAX - LONG_MAX/MARGIN_RATIO);
-        /* can never overflow, as long as the assert above is true */
-        unsigned long margin = new_len/MARGIN_RATIO + MIN_MARGIN;
-        unsigned long new_capacity;
-        void *new_items;
+        void *new_items = realloc(priv->pub.items, new_capacity*obj_size);
 
-        /* if the margin makes us overflow, don't use it (we know from
-         * check above that at least new_len is addressable in bytes) */
-        if (unlikely(!can_add_within_long(new_len, margin))
-                || unlikely(new_len+margin > SIZE_MAX)
-                || unlikely(!can_size_mult(new_len+margin, obj_size)))
-            margin = 0;
-
-        new_capacity = new_len + margin;
-
-        new_items = realloc(priv->pub.items, new_capacity*obj_size);
-
-        if (unlikely(new_items == NULL))
+        /* if we asked for 0 bytes, realloc may legitimately return NULL */
+        if (unlikely(new_items == NULL && new_capacity != 0))
             return TSARRAY_ENOMEM;
 
         priv->pub.items = new_items;
