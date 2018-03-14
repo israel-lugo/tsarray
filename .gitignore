@@ -28,6 +28,7 @@ tests/check-tsarray_append
 tests/check-tsarray_extend
 tests/check-tsarray_remove
 tests/check-tsarray_slice
+tests/check-tsarray_minmax
 tests/test-array
 tests/test-sparse
 tests/test2-sparse

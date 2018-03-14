@@ -520,6 +520,28 @@ struct _tsarray_pub *tsarray_slice(const struct _tsarray_pub *src_tsarray,
 
 
 /*
+ * TODO: Implement this.
+ */
+void *tsarray_min(const struct _tsarray_pub *tsarray,
+        int (*cmp)(const void *a, const void *b, void *arg))
+{
+    (void)tsarray; (void)cmp;
+    return NULL;
+}
+
+
+/*
+ * TODO: Implement this.
+ */
+void *tsarray_max(const struct _tsarray_pub *tsarray,
+        int (*cmp)(const void *a, const void *b, void *arg))
+{
+    (void)tsarray; (void)cmp;
+    return NULL;
+}
+
+
+/*
  * Append an object to the end of a tsarray.
  *
  * Receives the tsarray, and a pointer to an object. Will grow the array if
