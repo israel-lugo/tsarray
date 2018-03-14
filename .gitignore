@@ -22,6 +22,7 @@
 
 # Executables
 tests/check-internal
+tests/check-static
 tests/check-tsarray
 tests/check-tsarray_append
 tests/check-tsarray_extend
