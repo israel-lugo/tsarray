@@ -87,10 +87,10 @@ struct _tsarray_pub *tsarray_slice(const struct _tsarray_pub *p_tsarray,
         long start, long stop, long step) __NON_NULL __ATTR_MALLOC;
 
 void *tsarray_min(const struct _tsarray_pub *tsarray,
-        int (*cmp)(const void *a, const void *b, void *arg));
+        int (*cmp)(const void *a, const void *b, void *arg), void *arg);
 
 void *tsarray_max(const struct _tsarray_pub *tsarray,
-        int (*cmp)(const void *a, const void *b, void *arg));
+        int (*cmp)(const void *a, const void *b, void *arg), void *arg);
 
 int tsarray_remove(struct _tsarray_pub *p_tsarray, long index) __NON_NULL;
 
@@ -149,16 +149,18 @@ void tsarray_free(struct _tsarray_pub *p_tsarray) __NON_NULL;
                 (struct _tsarray_pub *)src); \
     } \
     static inline objtype *arraytype##_min(const arraytype *array, \
-            int (*cmp)(objtype const *a, objtype const *b, void *arg)) { \
+            int (*cmp)(objtype const *a, objtype const *b, void *arg), \
+            void *arg) { \
         return (objtype *)tsarray_min( \
                 (const struct _tsarray_pub *)array, \
-                (int (*)(const void *, const void *, void *))cmp); \
+                (int (*)(const void *, const void *, void *))cmp, arg); \
     } \
     static inline objtype *arraytype##_max(const arraytype *array, \
-            int (*cmp)(objtype const *a, objtype const *b, void *arg)) { \
+            int (*cmp)(objtype const *a, objtype const *b, void *arg), \
+            void *arg) { \
         return (objtype *)tsarray_max( \
                 (const struct _tsarray_pub *)array, \
-                (int (*)(const void *, const void *, void *))cmp); \
+                (int (*)(const void *, const void *, void *))cmp, arg); \
     } \
     static inline int arraytype##_remove(arraytype *array, long index) { \
         return tsarray_remove((struct _tsarray_pub *)array, index); \

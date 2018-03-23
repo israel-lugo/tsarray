@@ -35,10 +35,12 @@
 #include "setupcheck.h"
 
 
+#define ARG_PTR ((void *)0x1234)
+
 
 static int intcmp(const int *a, const int *b, void *arg)
 {
-    (void)arg;
+    ck_assert_ptr_eq(arg, ARG_PTR);
     return *a > *b ? 1 : (*a == *b ? 0 : -1);
 }
 
@@ -48,10 +50,10 @@ static int intcmp(const int *a, const int *b, void *arg)
  */
 START_TEST(test_empty)
 {
-    int *minval = intarray_min(a1, intcmp);
+    int *minval = intarray_min(a1, intcmp, ARG_PTR);
     ck_assert_ptr_eq(minval, NULL);
 
-    int *maxval = intarray_max(a1, intcmp);
+    int *maxval = intarray_max(a1, intcmp, ARG_PTR);
     ck_assert_ptr_eq(maxval, NULL);
 }
 END_TEST
@@ -68,12 +70,12 @@ START_TEST(test_single)
 
     append_seq_checked(a1, start, start+1);
 
-    minval = intarray_min(a1, intcmp);
+    minval = intarray_min(a1, intcmp, ARG_PTR);
     ck_assert_ptr_ne(minval, NULL);
     ck_assert_ptr_eq(minval, &a1->items[0]);
     ck_assert_int_eq(*minval, start);
 
-    maxval = intarray_max(a1, intcmp);
+    maxval = intarray_max(a1, intcmp, ARG_PTR);
     ck_assert_ptr_ne(maxval, NULL);
     ck_assert_ptr_eq(maxval, &a1->items[0]);
     ck_assert_int_eq(*maxval, start);
@@ -92,12 +94,12 @@ START_TEST(test_two_items)
 
     append_seq_checked(a1, start, start+2);
 
-    minval = intarray_min(a1, intcmp);
+    minval = intarray_min(a1, intcmp, ARG_PTR);
     ck_assert_ptr_ne(minval, NULL);
-    ck_assert_ptr_eq(minval, &a1->items[0]);
     ck_assert_int_eq(*minval, start);
+    ck_assert_ptr_eq(minval, &a1->items[0]);
 
-    maxval = intarray_max(a1, intcmp);
+    maxval = intarray_max(a1, intcmp, ARG_PTR);
     ck_assert_ptr_ne(maxval, NULL);
     ck_assert_ptr_eq(maxval, &a1->items[1]);
     ck_assert_int_eq(*maxval, start+1);
@@ -118,15 +120,15 @@ START_TEST(test_duplicate)
     intarray_append(a1, &x);
     intarray_append(a1, &x);
 
-    minval = intarray_min(a1, intcmp);
+    minval = intarray_min(a1, intcmp, ARG_PTR);
     ck_assert_ptr_ne(minval, NULL);
     ck_assert_ptr_eq(minval, &a1->items[0]);
     ck_assert_int_eq(*minval, x);
 
-    maxval = intarray_max(a1, intcmp);
+    maxval = intarray_max(a1, intcmp, ARG_PTR);
     ck_assert_ptr_ne(maxval, NULL);
-    ck_assert_ptr_eq(maxval, &a1->items[0]);
     ck_assert_int_eq(*maxval, x);
+    ck_assert_ptr_eq(maxval, &a1->items[0]);
 }
 END_TEST
 
