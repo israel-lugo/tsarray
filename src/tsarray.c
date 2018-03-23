@@ -98,6 +98,8 @@ struct _tsarray_priv {
 #define HINT_STDDEV_RATIO 3
 
 
+static bool same_sign(int a, int b) __ATTR_CONST;
+
 static inline void *get_nth_item(const void *items, long index,
         size_t obj_size) __ATTR_CONST __NON_NULL;
 
@@ -112,6 +114,19 @@ static int tsarray_resize(struct _tsarray_priv *priv, unsigned long new_len) __N
 
 static void set_items(void *items, long index, const void *objects,
         size_t obj_size, unsigned long count);
+
+
+
+/*
+ * Check if a and b are of the same sign.
+ *
+ * Returns true if and only if a and b are both positive, both negative, or
+ * both zero.
+ */
+static bool same_sign(int a, int b)
+{
+    return (a > 0) == (b > 0) && (a < 0) == (b < 0);
+}
 
 
 /*
@@ -516,6 +531,81 @@ struct _tsarray_pub *tsarray_slice(const struct _tsarray_pub *src_tsarray,
         return &slice_priv->pub;
     }
     /* UNREACHABLE */
+}
+
+
+/*
+ * Scan a tsarray, looking for the smallest or largest item.
+ *
+ * Receives the array, a comparison function, a generic argument to pass
+ * to the comparison function for context, and the direction in which to
+ * scan. If direction is negative, look for the smallest item. If direction
+ * is positive, look for the largest item. Direction must not be zero.
+ *
+ * Returns a pointer to the chosen item, or NULL if the array is empty.
+ */
+static void *minmax_scan(const struct _tsarray_pub *tsarray,
+        int (*cmp)(const void *a, const void *b, void *arg),
+        void *arg, int direction)
+{
+    const struct _tsarray_priv *priv = (const struct _tsarray_priv *)tsarray;
+    const unsigned long len = priv->len;
+    const size_t obj_size = priv->obj_size;
+    char *candidate = (char *)(tsarray->items);
+    long i;
+
+    assert(direction != 0);
+
+    if (len == 0)
+        return NULL;
+
+    for (i=1; i<(long)len; i++)
+    {
+        char *item = get_nth_item(tsarray->items, i, obj_size);
+        int diff = cmp(item, candidate, arg);
+        if (same_sign(direction, diff))
+            candidate = item;
+    }
+
+    return candidate;
+}
+
+
+/*
+ * Return a pointer to smallest item in a tsarray.
+ *
+ * Receives the tsarray, a comparison function, and a generic argument that
+ * will be passed to the comparison function for context.
+ *
+ * The comparison function should return a number less than, equal to, or
+ * greater than zero if the first argument is, respectively, less than,
+ * equal to, or greater than the second.
+ *
+ * Returns a pointer to the smallest item, or NULL if the array is empty.
+ */
+void *tsarray_min(const struct _tsarray_pub *tsarray,
+        int (*cmp)(const void *a, const void *b, void *arg), void *arg)
+{
+    return minmax_scan(tsarray, cmp, arg, -1);
+}
+
+
+/*
+ * Return a pointer to largest item in a tsarray.
+ *
+ * Receives the tsarray, a comparison function, and a generic argument that
+ * will be passed to the comparison function for context.
+ *
+ * The comparison function should return a number less than, equal to, or
+ * greater than zero if the first argument is, respectively, less than,
+ * equal to, or greater than the second.
+ *
+ * Returns a pointer to the largest item, or NULL if the array is empty.
+ */
+void *tsarray_max(const struct _tsarray_pub *tsarray,
+        int (*cmp)(const void *a, const void *b, void *arg), void *arg)
+{
+    return minmax_scan(tsarray, cmp, arg, 1);
 }
 
 

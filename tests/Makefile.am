@@ -1,6 +1,6 @@
 
 # programs built only with "make check"; don't include in "make all"
-check_PROGRAMS = check-internal check-static check-tsarray check-tsarray_append check-tsarray_remove check-tsarray_extend check-tsarray_slice test-array test-sparse
+check_PROGRAMS = check-internal check-static check-tsarray check-tsarray_append check-tsarray_remove check-tsarray_extend check-tsarray_slice check-tsarray_minmax test-array test-sparse
 
 # run these programs as tests when doing "make check"
 TESTS = $(check_PROGRAMS)
@@ -42,6 +42,10 @@ check_tsarray_extend_LDADD = $(tsarray_common_ldadd)
 check_tsarray_slice_SOURCES = check-tsarray_slice.c $(tsarray_common_sources)
 check_tsarray_slice_CFLAGS = $(tsarray_common_cflags)
 check_tsarray_slice_LDADD = $(tsarray_common_ldadd)
+
+check_tsarray_minmax_SOURCES = check-tsarray_minmax.c $(tsarray_common_sources)
+check_tsarray_minmax_CFLAGS = $(tsarray_common_cflags)
+check_tsarray_minmax_LDADD = $(tsarray_common_ldadd)
 
 test_array_LDADD = $(libs_path)/libtsarray.la
 test_array_SOURCES = test-array.c $(top_builddir)/src/tsarray.h

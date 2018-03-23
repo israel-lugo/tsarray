@@ -86,6 +86,12 @@ int tsarray_extend(struct _tsarray_pub *tsarray_dest,
 struct _tsarray_pub *tsarray_slice(const struct _tsarray_pub *p_tsarray,
         long start, long stop, long step) __NON_NULL __ATTR_MALLOC;
 
+void *tsarray_min(const struct _tsarray_pub *tsarray,
+        int (*cmp)(const void *a, const void *b, void *arg), void *arg);
+
+void *tsarray_max(const struct _tsarray_pub *tsarray,
+        int (*cmp)(const void *a, const void *b, void *arg), void *arg);
+
 int tsarray_remove(struct _tsarray_pub *p_tsarray, long index) __NON_NULL;
 
 void tsarray_free(struct _tsarray_pub *p_tsarray) __NON_NULL;
@@ -100,6 +106,22 @@ void tsarray_free(struct _tsarray_pub *p_tsarray) __NON_NULL;
  *
  * Example (define intarray as an array of int):
  *      TSARRAY_TYPEDEF(intarray, int);
+ *
+ * XXX: Special care was taken in defining the type-specific declaration for
+ * the comparison function in arraytype##_min and arraytype##_max.
+ *
+ * We want to receive two pointers to constant objtype. We cannot use,
+ * however, const objtype *. That will break if objtype is a pointer type
+ * (e.g. int *). It would expand to const int * *, which is a pointer to a
+ * pointer to constant int.
+ *
+ * The solution is to use the commutative property of type qualifiers and
+ * type specifiers (cf. C99 6.7 declaration-specifiers, applied to 6.7.5
+ * parameter-declaration). What use two parameters of objtype const *, which
+ * expands to int *const *. That is a pointer to constant pointer to int. This
+ * still works with non-pointer types: if objtype is int, this would expand to
+ * int const *, which is a pointer to constant int.
+ *
  */
 #define TSARRAY_TYPEDEF(arraytype, objtype) \
     typedef struct { objtype *items; } arraytype; \
@@ -125,6 +147,20 @@ void tsarray_free(struct _tsarray_pub *p_tsarray) __NON_NULL;
     static inline int arraytype##_extend(arraytype *dest, arraytype *src) { \
         return tsarray_extend((struct _tsarray_pub *)dest, \
                 (struct _tsarray_pub *)src); \
+    } \
+    static inline objtype *arraytype##_min(const arraytype *array, \
+            int (*cmp)(objtype const *a, objtype const *b, void *arg), \
+            void *arg) { \
+        return (objtype *)tsarray_min( \
+                (const struct _tsarray_pub *)array, \
+                (int (*)(const void *, const void *, void *))cmp, arg); \
+    } \
+    static inline objtype *arraytype##_max(const arraytype *array, \
+            int (*cmp)(objtype const *a, objtype const *b, void *arg), \
+            void *arg) { \
+        return (objtype *)tsarray_max( \
+                (const struct _tsarray_pub *)array, \
+                (int (*)(const void *, const void *, void *))cmp, arg); \
     } \
     static inline int arraytype##_remove(arraytype *array, long index) { \
         return tsarray_remove((struct _tsarray_pub *)array, index); \
