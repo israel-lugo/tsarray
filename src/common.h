@@ -120,7 +120,7 @@ static inline int can_ulong_add(const unsigned long x,
         const unsigned long y) __ATTR_CONST;
 static inline unsigned long ulong_add(const unsigned long x,
         const unsigned long y) __ATTR_CONST;
-static inline unsigned long can_add_ulong_within(const unsigned long x,
+static inline int can_add_ulong_within(const unsigned long x,
         const unsigned long y, const unsigned long cap) __ATTR_CONST;
 static inline unsigned long ulong_add_capped(const unsigned long x,
         const unsigned long y, const unsigned long cap) __ATTR_CONST;
@@ -178,7 +178,7 @@ static inline unsigned long ulong_add(const unsigned long x,
 /*
  * Check whether two unsigned long can be added within a cap.
  */
-static inline unsigned long can_add_ulong_within(const unsigned long x,
+static inline int can_add_ulong_within(const unsigned long x,
         const unsigned long y, const unsigned long cap)
 {
     return y <= cap && x <= cap && x <= (cap - y);
