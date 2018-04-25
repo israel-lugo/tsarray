@@ -356,7 +356,6 @@ static unsigned long calc_new_capacity_with_hint(size_t obj_size,
  */
 static int tsarray_resize(struct _tsarray_priv *priv, unsigned long new_len)
 {
-    const unsigned long old_len = priv->len;
     const size_t obj_size = priv->obj_size;
     const unsigned long old_capacity = priv->capacity;
     unsigned long new_capacity;
