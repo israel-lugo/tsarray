@@ -61,8 +61,8 @@ END_TEST
 START_TEST(test_remove_first)
 {
     struct _tsarray_priv *priv = (struct _tsarray_priv *)a1;
-    const long start = -4;
-    const long stop = 10;
+    const int start = -4;
+    const int stop = 10;
     const unsigned long full_len = (unsigned long)(stop-start);
     int remove_result;
     unsigned long i;
@@ -87,8 +87,8 @@ END_TEST
 START_TEST(test_remove_last)
 {
     struct _tsarray_priv *priv = (struct _tsarray_priv *)a1;
-    const long start = -4;
-    const long stop = 10;
+    const int start = -4;
+    const int stop = 10;
     const unsigned long full_len = (unsigned long)(stop-start);
     int remove_result;
     unsigned long i;
