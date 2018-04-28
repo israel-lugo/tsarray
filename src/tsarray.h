@@ -94,6 +94,8 @@ void *tsarray_max(const struct _tsarray_pub *tsarray,
 
 int tsarray_remove(struct _tsarray_pub *p_tsarray, long index) __NON_NULL;
 
+int tsarray_truncate(struct _tsarray_pub *p_tsarray, long len) __NON_NULL;
+
 void tsarray_free(struct _tsarray_pub *p_tsarray) __NON_NULL;
 
 
@@ -169,6 +171,9 @@ void tsarray_free(struct _tsarray_pub *p_tsarray) __NON_NULL;
             long start, long stop, long step) { \
         return (arraytype *)tsarray_slice((const struct _tsarray_pub *)array, \
                 start, stop, step); \
+    } \
+    static inline int arraytype##_truncate(arraytype *array, long len) { \
+        return tsarray_truncate((struct _tsarray_pub *)array, len); \
     } \
     static inline void arraytype##_free(arraytype *array) { \
         tsarray_free((struct _tsarray_pub *)array); \

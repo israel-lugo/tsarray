@@ -740,6 +740,12 @@ int tsarray_remove(struct _tsarray_pub *tsarray, long index)
 }
 
 
+int tsarray_truncate(struct _tsarray_pub *tsarray, long len)
+{
+    return TSARRAY_EINVAL;
+}
+
+
 /*
  * Free the memory occupied by a tsarray.
  *
